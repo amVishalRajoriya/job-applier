@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Audit log</h2><p class="muted">Append-only. Latest 500 entries.</p>
+<div class="scroll"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead><tbody>
+{% for a in rows %}<tr><td class="muted">{{ a.ts }}</td><td>{{ a.actor }}</td><td>{{ a.action }}</td>
+<td>{% if a.entity == 'job' %}<a href="/jobs/{{ a.entity_id }}">job {{ a.entity_id }}</a>{% else %}{{ a.entity or '' }} {{ a.entity_id or '' }}{% endif %}</td>
+<td class="muted">{{ a.detail[:400] }}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

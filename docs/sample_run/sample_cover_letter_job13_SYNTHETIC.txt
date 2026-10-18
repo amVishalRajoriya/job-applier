@@ -1,0 +1,10 @@
+I am applying for the Backend Engineer role at Shopwell (synthetic). I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience in payments.
+
+Experience from my resume that is most relevant to this role:
+- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.
+- Deployed the service to a local Kubernetes cluster with Helm for a learning exercise.
+- Added Prometheus metrics and Grafana dashboards for payment API latency and error rates.
+
+Thank you for considering my application. I would welcome the chance to discuss the role.
+
+Asha Testcandidate

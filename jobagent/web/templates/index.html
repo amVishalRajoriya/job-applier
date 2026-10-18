@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="tiles">
+  <div class="tile"><span class="muted">Jobs discovered</span><b>{{ summary.jobs_discovered }}</b></div>
+  <div class="tile"><span class="muted">Meet criteria</span><b>{{ summary.meets_criteria }}</b></div>
+  <div class="tile"><span class="muted">Ready for review</span><b>{{ summary.by_status.get('READY_FOR_REVIEW', 0) }}</b></div>
+  <div class="tile"><span class="muted">Submitted (verified)</span><b>{{ summary.verified_submissions }}</b></div>
+  <div class="tile"><span class="muted">Unverified</span><b>{{ summary.by_status.get('SUBMISSION_UNVERIFIED', 0) }}</b></div>
+  <div class="tile"><span class="muted">Mode</span><b>{{ mode }}</b></div>
+</div>
+<form method="get" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+  <input name="q" value="{{ q }}" placeholder="Search title, employer, location, description">
+  <select name="status"><option value="">All statuses</option>
+  {% for s in statuses %}<option {% if s == status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <button>Filter</button>
+</form>
+<p class="muted">Scores come from this tool's own rubric, not from any employer's applicant tracking system.</p>
+<div class="scroll"><table>
+<thead><tr><th>Job</th><th>Status</th><th>Criteria</th><th>Baseline</th><th>Final</th><th>Resume version</th>
+<th>Missing qualifications</th><th>Applied</th><th>Verified</th><th>Follow-up</th><th>Recruiter response</th><th>Error / retry</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+  <td><a href="/jobs/{{ r.job_id }}">{{ r.title }}</a><br><span class="muted">{{ r.employer }} · {{ r.location or 'location n/a' }} · {{ r.sources }}</span>
+  {% if r.flags %}<br><span class="pill warn">{{ r.flags }}</span>{% endif %}</td>
+  <td><span class="pill">{{ r.status }}</span>{% if r.blocker %}<br><span class="warn">{{ r.blocker[:120] }}</span>{% endif %}</td>
+  <td>{% if r.meets_criteria %}<span class="ok">yes</span>{% elif r.meets_criteria is none %}<span class="muted">–</span>{% else %}<span class="bad" title="{{ r.disqualifiers }}">no</span>{% endif %}</td>
+  <td>{{ r.baseline_score if r.baseline_score is not none else '–' }}</td>
+  <td>{{ r.final_score if r.final_score is not none else '–' }}{% if r.optimization_outcome == 'below_target_honest' %}<br><span class="pill warn">below target (honest)</span>{% endif %}</td>
+  <td>{{ r.resume_version or '–' }}</td>
+  <td class="muted">{{ (r.missing_qualifications or '')[:160] }}</td>
+  <td>{{ (r.date_applied or '')[:10] }}</td>
+  <td>{% if r.submission_verified %}<span class="ok">yes {{ r.reference }}</span>{% elif r.submission_verified is false %}<span class="warn">unverified</span>{% else %}–{% endif %}</td>
+  <td>{{ r.follow_up_date or '' }}</td><td>{{ r.recruiter_response or '' }}</td>
+  <td class="muted">{{ (r.error or '')[:100] }}{% if r.retry_status %} ({{ r.retry_status }}){% endif %}</td>
+</tr>
+{% else %}<tr><td colspan="12" class="muted">No jobs yet. Run <code>jobagent discover</code> and <code>jobagent process</code>.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

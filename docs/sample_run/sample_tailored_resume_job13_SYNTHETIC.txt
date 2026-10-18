@@ -1,0 +1,36 @@
+Asha Testcandidate
+Bengaluru, India | asha.testcandidate@example.com | +91 90000 00000 | https://linkedin.com/in/asha-testcandidate-synthetic
+
+SUMMARY
+Senior Software Engineer with 8 years of experience in payments, working with Python, REST APIs, Prometheus, Grafana and FastAPI.
+
+EXPERIENCE
+Senior Software Engineer — Paywise Technologies (synthetic) | Bengaluru, India | Mar 2022 – Present
+- Added Prometheus metrics and Grafana dashboards for payment API latency and error rates.
+- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.
+- Migrated services to Docker containers deployed on AWS ECS with GitHub Actions pipelines.
+- Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.
+- Mentored 3 junior engineers and ran weekly code reviews.
+
+Software Engineer — LendKart Finance (synthetic) | Pune, India | Jul 2019 – Feb 2022
+- Built loan eligibility services in Python and Flask processing 50,000 applications per month.
+- Wrote unit tests with pytest and raised coverage from 40% to 85%.
+- Worked with the risk team on fraud detection rules for loan applications.
+
+Associate Software Engineer — Infobyte Solutions (synthetic) | Pune, India | Jun 2018 – Jun 2019
+- Maintained internal reporting dashboards using SQL and Excel.
+- Fixed production bugs in a Java billing module.
+
+PROJECTS
+Event-driven ledger (personal project)
+- Implemented an event-sourced ledger in Python with FastAPI and PostgreSQL, publishing balance events to Kafka.
+- Deployed the service to a local Kubernetes cluster with Helm for a learning exercise.
+
+EDUCATION
+B.Tech in Computer Science — Example Institute of Technology (synthetic) | 2018
+
+SKILLS
+Python, REST APIs, Django, Flask, SQL, PostgreSQL, Redis, AWS, Docker, Unit Testing, Agile, Java (beginner)
+
+CERTIFICATIONS
+AWS Certified Developer – Associate — Amazon Web Services (2021)

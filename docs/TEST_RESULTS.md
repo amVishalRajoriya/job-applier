@@ -1,0 +1,52 @@
+# Test results
+
+Run on 2026-10-18, Python 3.13, Chromium (Playwright 1.64), against the local test ATS with SYNTHETIC data only.
+Command: `python -m pytest -v tests`
+
+```
+tests/test_acceptance.py::test_01_import_and_parse_resume[pdf] PASSED    [  2%]
+tests/test_acceptance.py::test_01_import_and_parse_resume[docx] PASSED   [  4%]
+tests/test_acceptance.py::test_01_import_and_parse_resume[md] PASSED     [  6%]
+tests/test_acceptance.py::test_02_discover_from_multiple_sources PASSED  [  9%]
+tests/test_acceptance.py::test_02b_robots_and_source_isolation PASSED    [ 11%]
+tests/test_acceptance.py::test_03_cross_site_dedup PASSED                [ 13%]
+tests/test_acceptance.py::test_03b_dedup_normalization PASSED            [ 16%]
+tests/test_acceptance.py::test_04_scoring_is_deterministic_and_explainable PASSED [ 18%]
+tests/test_acceptance.py::test_04b_keyword_is_not_proficiency PASSED     [ 20%]
+tests/test_acceptance.py::test_05_optimize_with_verified_evidence PASSED [ 23%]
+tests/test_acceptance.py::test_06_refuses_to_invent PASSED               [ 25%]
+tests/test_acceptance.py::test_06b_truth_guard_catches_tampering PASSED  [ 27%]
+tests/test_acceptance.py::test_07_separate_resume_version_per_job PASSED [ 30%]
+tests/test_acceptance.py::test_08_eligibility_failures PASSED            [ 32%]
+tests/test_acceptance.py::test_09_complete_application PASSED            [ 34%]
+tests/test_acceptance.py::test_10_duplicate_submissions PASSED           [ 37%]
+tests/test_acceptance.py::test_11_verified_submission_recorded PASSED    [ 39%]
+tests/test_acceptance.py::test_12_uncertain_outcomes_unverified PASSED   [ 41%]
+tests/test_acceptance.py::test_12b_interrupted_submission_is_not_resubmitted PASSED [ 44%]
+tests/test_acceptance.py::test_13_recover_from_navigation_and_form_errors PASSED [ 46%]
+tests/test_acceptance.py::test_13b_offsite_redirect_is_blocked_not_retried PASSED [ 48%]
+tests/test_acceptance.py::test_14_pause_for_captcha PASSED               [ 51%]
+tests/test_acceptance.py::test_14b_unexpected_question_then_candidate_answers PASSED [ 53%]
+tests/test_acceptance.py::test_15_export_report PASSED                   [ 55%]
+tests/test_acceptance.py::test_modes_and_consent PASSED                  [ 58%]
+tests/test_units.py::test_profile_encrypted_at_rest PASSED               [ 60%]
+tests/test_units.py::test_audit_log_is_append_only PASSED                [ 62%]
+tests/test_units.py::test_untrusted_text_handling PASSED                 [ 65%]
+tests/test_units.py::test_question_classification[Are you legally authorized to work in India?-work_authorization] PASSED [ 67%]
+tests/test_units.py::test_question_classification[Will you require visa sponsorship?-sponsorship] PASSED [ 69%]
+tests/test_units.py::test_question_classification[What is your gender?-sensitive:gender] PASSED [ 72%]
+tests/test_units.py::test_question_classification[Do you have a disability?-sensitive:disability_status] PASSED [ 74%]
+tests/test_units.py::test_question_classification[I certify that the information provided is true-consequential] PASSED [ 76%]
+tests/test_units.py::test_question_classification[I agree to the privacy policy-consequential] PASSED [ 79%]
+tests/test_units.py::test_question_classification[Expected CTC-salary] PASSED [ 81%]
+tests/test_units.py::test_question_classification[What is your notice period?-notice_period] PASSED [ 83%]
+tests/test_units.py::test_question_classification[Were you referred by an employee?-referral] PASSED [ 86%]
+tests/test_units.py::test_question_classification[What's your favourite colour?-unknown] PASSED [ 88%]
+tests/test_units.py::test_answers_use_only_approved_data PASSED          [ 90%]
+tests/test_units.py::test_requirement_parsing_sections_and_cues PASSED   [ 93%]
+tests/test_units.py::test_llm_cover_letter_is_guarded PASSED             [ 95%]
+tests/test_units.py::test_dashboard PASSED                               [ 97%]
+tests/test_units.py::test_cli_smoke PASSED                               [100%]
+=================== 43 passed, 1 warning in 69.96s (0:01:09) ===================
+(re-run after the final change: 43 passed in 64.98s)
+```

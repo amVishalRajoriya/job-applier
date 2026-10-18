@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Job applications{% endblock %}</title>
+<style>
+:root{--bg:#fafafa;--fg:#1d1d1f;--muted:#6b6b70;--line:#e2e2e6;--card:#fff;--accent:#2a5bd7;--ok:#1f7a3f;--warn:#9a6200;--bad:#b42318}
+@media (prefers-color-scheme: dark){:root{--bg:#141416;--fg:#ececf1;--muted:#a0a0aa;--line:#2c2c33;--card:#1c1c20;--accent:#7aa2ff;--ok:#5fcf8a;--warn:#f0b450;--bad:#ff7b6b}}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;margin:0}
+header{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header a{color:var(--fg);text-decoration:none;font-weight:600}main{padding:16px 20px;max-width:1400px}
+a{color:var(--accent)}table{border-collapse:collapse;width:100%;background:var(--card)}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-weight:600;color:var(--muted);font-size:12px}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}.tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:140px}
+.tile b{display:block;font-size:22px}.muted{color:var(--muted)}.pill{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}pre{white-space:pre-wrap;background:var(--card);border:1px solid var(--line);padding:10px;border-radius:6px}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px}
+input,select,textarea,button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+button{cursor:pointer;background:var(--accent);color:#fff;border:none}.scroll{overflow-x:auto}
+</style></head><body>
+<header><a href="/">Job applications</a><a href="/audit" class="muted">Audit log</a>
+<span class="muted">Export: <a href="/export.csv">CSV</a> · <a href="/export.json">JSON</a> · <a href="/export.html">HTML</a></span></header>
+<main>{% block body %}{% endblock %}</main></body></html>

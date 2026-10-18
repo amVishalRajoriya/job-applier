@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} · {{ job.employer }}{% endblock %}
+{% block body %}
+<h2>{{ job.title }} <span class="muted">at {{ job.employer }}</span></h2>
+<p><span class="pill">{{ job.status }}</span> {{ job.location or '' }} {{ job.remote_policy or '' }} ·
+<a href="{{ job.application_url }}" rel="noreferrer noopener" target="_blank">application URL</a>
+{% for f in flags %}<span class="pill warn">{{ f }}</span>{% endfor %}</p>
+{% if app and app.blocker %}<section><b class="warn">Needs you:</b> {{ app.blocker }}</section>{% endif %}
+
+<section><h3>Screening</h3>
+<p>Meets criteria: {% if screen.passed %}<span class="ok">yes</span>{% else %}<span class="bad">no</span>{% endif %} · relevance {{ screen.relevance }}</p>
+{% for d in screen.disqualifiers or [] %}<div class="bad">✗ {{ d }}</div>{% endfor %}
+{% for u in screen.unknowns or [] %}<div class="warn">? {{ u }}</div>{% endfor %}
+{% for w in screen.warnings or [] %}<div class="muted">! {{ w }}</div>{% endfor %}
+</section>
+
+{% if final %}
+<section><h3>Match score: {{ base_total }} → {{ final_total }}</h3>
+<p class="muted">{{ final.disclaimer }} Confidence: {{ final.confidence }} ({{ final.confidence_reasons|join('; ') }}). Keyword alignment {{ final.keyword_alignment }}% (mentions only, not proof of proficiency).</p>
+<table><thead><tr><th>Category</th><th>Weight</th><th>Baseline</th><th>Final</th><th>Missing</th></tr></thead><tbody>
+{% for name, c in final.categories.items() %}
+<tr><td>{{ name }}</td><td>{{ c.weight }}</td>
+<td>{{ '%.0f%%'|format(baseline.categories[name].score*100) if baseline.categories[name].score is not none else 'n/a' }}</td>
+<td>{{ '%.0f%%'|format(c.score*100) if c.score is not none else 'n/a' }}</td><td class="muted">{{ c.missing|join('; ') }}</td></tr>
+{% endfor %}</tbody></table>
+{% if final.transferable_skills %}<p>Transferable: {% for t in final.transferable_skills %}{{ t.required or t.preferred }} ← {{ t.candidate_has }}{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+<p><b>Recommended changes</b></p><ul>{% for r in final.recommended_changes %}<li>{{ r }}</li>{% endfor %}</ul>
+<details><summary>Evidence per category</summary><pre>{% for name, c in final.categories.items() %}{{ name }}:
+{% for e in c.evidence %}  {{ e }}
+{% endfor %}{% endfor %}</pre></details>
+</section>
+{% endif %}
+
+{% if changes %}
+<section><h3>Resume changes ({{ changes.outcome }})</h3>
+<ul>{% for c in changes.changes %}<li><b>{{ c.kind }}</b> {{ c.target }}: {{ c.reason }}{% if c.score_delta %} (+{{ c.score_delta }}){% endif %}
+{% if c.before %}<br><span class="muted">before: {{ c.before }}</span>{% endif %}{% if c.after %}<br>after: {{ c.after }}{% endif %}</li>{% endfor %}</ul>
+{% if changes.rejected_suggestions %}<p><b>Rejected by the truth guard</b></p><ul>{% for r in changes.rejected_suggestions %}<li>{{ r.kind }}: {{ r.text }} <span class="bad">{{ r.problems|join('; ') }}</span></li>{% endfor %}</ul>{% endif %}
+{% if changes.remaining_gaps %}<p><b>Remaining gaps</b></p><ul>{% for g in changes.remaining_gaps %}<li>{{ g }}</li>{% endfor %}</ul>{% endif %}
+<p>Files: {% for k in files %}<a href="/files/{{ job.id }}/{{ k }}">{{ k }}</a> {% endfor %}</p>
+<details><summary>Tailored resume text</summary><pre>{{ resume_text }}</pre></details>
+{% if app %}<details><summary>Cover letter</summary><pre>{{ app.cover_letter }}</pre></details>{% endif %}
+</section>
+{% endif %}
+
+{% if app %}
+<section><h3>Application answers</h3>
+<table><thead><tr><th>Question</th><th>Answer</th><th>Status</th><th>Source</th></tr></thead><tbody>
+{% for q, a in answers.items() %}
+<tr><td>{{ q }}{% if a.required %} *{% endif %}</td><td>{{ a.value if a.value is not none else '' }}</td>
+<td class="{{ 'ok' if a.status in ('answered','file') else 'warn' }}">{{ a.status }}</td><td class="muted">{{ a.source or '' }} {{ a.note or '' }}</td></tr>
+{% if a.status not in ('answered','file') %}
+<tr><td colspan="4"><form method="post" action="/jobs/{{ job.id }}/answer" style="display:flex;gap:6px">
+<input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="question" value="{{ q }}">
+{% if a.options %}<select name="value">{% for o in a.options %}<option>{{ o }}</option>{% endfor %}</select>{% else %}<input name="value" style="flex:1" placeholder="Your answer">{% endif %}
+<button>Save answer</button></form></td></tr>
+{% endif %}
+{% endfor %}</tbody></table>
+{% if job.status == 'READY_FOR_REVIEW' %}
+<form method="post" action="/jobs/{{ job.id }}/approve" style="margin-top:10px"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<button>Approve documents and answers for submission</button></form>{% endif %}
+{% if app.submitted_at %}<p>Submitted {{ app.submitted_at }} · verified: {{ 'yes' if app.verified else 'no' }} · reference {{ app.reference or '–' }}
+{% if verification.note %}· {{ verification.note }}{% endif %}</p>{% endif %}
+</section>
+{% endif %}
+
+<section><h3>Tracking</h3>
+<form method="post" action="/jobs/{{ job.id }}/tracking" style="display:flex;gap:8px;flex-wrap:wrap">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<select name="status"><option value="">(status unchanged)</option>{% for s in manual_statuses %}<option>{{ s }}</option>{% endfor %}</select>
+<input type="date" name="follow_up_date" value="{{ job.follow_up_date or '' }}">
+<input name="recruiter_response" placeholder="Recruiter response" value="{{ job.recruiter_response or '' }}">
+<button>Save</button></form></section>
+
+<section><h3>Sources</h3><ul>{% for s in sources %}<li>{{ s.source }} · {{ s.source_id }} · {{ s.discovered_at }}</li>{% endfor %}</ul>
+<p>Resume versions: {% for v in versions %}{{ v.label }} ({{ v.created_at }}){% if not loop.last %}, {% endif %}{% endfor %}</p></section>
+
+<section><h3>Audit trail</h3><table><tbody>{% for a in audit %}<tr><td class="muted">{{ a.ts }}</td><td>{{ a.actor }}</td><td>{{ a.action }}</td><td class="muted">{{ a.detail[:300] }}</td></tr>{% endfor %}</tbody></table></section>
+
+<details><summary>Job description (untrusted text from the posting)</summary><pre>{{ job.description }}</pre></details>
+{% endblock %}

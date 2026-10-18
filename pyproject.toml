@@ -1,0 +1,29 @@
+[project]
+name = "jobagent"
+version = "0.1.0"
+description = "Truthful job discovery, matching, tailoring and verified application agent"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.144.0", "uvicorn==0.53.0", "Jinja2==3.1.6", "python-multipart==0.0.32", "httpx==0.28.1",
+  "pydantic==2.13.5", "PyYAML==6.0.1", "pypdf==6.17.0", "python-docx==1.2.0", "cryptography==50.0.1",
+  "playwright==1.64.0", "anthropic==1.15.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+
+[project.scripts]
+jobagent = "jobagent.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["jobagent*", "testportal*"]
+
+[tool.setuptools.package-data]
+jobagent = ["web/templates/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

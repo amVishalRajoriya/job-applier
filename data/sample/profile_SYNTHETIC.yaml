@@ -1,0 +1,133 @@
+# SYNTHETIC TEST DATA. Not a real person. Used by tests and the demo run.
+synthetic: true
+contact:
+  name: Asha Testcandidate
+  email: asha.testcandidate@example.com
+  phone: "+91 90000 00000"
+  location: Bengaluru, India
+  linkedin: https://linkedin.com/in/asha-testcandidate-synthetic
+summary: Backend engineer with eight years of experience building payment and lending services in Python.
+experience:
+  - id: exp1
+    employer: Paywise Technologies (synthetic)
+    title: Senior Software Engineer
+    start: "2022-03"
+    end: null
+    location: Bengaluru, India
+    domains: [payments, fintech]
+    bullets:
+      - id: exp1.b1
+        text: Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.
+      - id: exp1.b2
+        text: Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.
+      - id: exp1.b3
+        text: Mentored 3 junior engineers and ran weekly code reviews.
+      - id: exp1.b4
+        text: Migrated services to Docker containers deployed on AWS ECS with GitHub Actions pipelines.
+      - id: exp1.b5
+        on_master_resume: false
+        text: Built a Redis-backed idempotency layer for payment webhooks that eliminated duplicate merchant payouts.
+      - id: exp1.b6
+        on_master_resume: false
+        text: Added Prometheus metrics and Grafana dashboards for payment API latency and error rates.
+  - id: exp2
+    employer: LendKart Finance (synthetic)
+    title: Software Engineer
+    start: "2019-07"
+    end: "2022-02"
+    location: Pune, India
+    domains: [fintech]
+    bullets:
+      - id: exp2.b1
+        text: Built loan eligibility services in Python and Flask processing 50,000 applications per month.
+      - id: exp2.b2
+        text: Wrote unit tests with pytest and raised coverage from 40% to 85%.
+      - id: exp2.b3
+        text: Worked with the risk team on fraud detection rules for loan applications.
+      - id: exp2.b4
+        on_master_resume: false
+        text: Consumed loan status events from Kafka topics to update borrower records in near real time.
+  - id: exp3
+    employer: Infobyte Solutions (synthetic)
+    title: Associate Software Engineer
+    start: "2018-06"
+    end: "2019-06"
+    location: Pune, India
+    bullets:
+      - id: exp3.b1
+        text: Maintained internal reporting dashboards using SQL and Excel.
+      - id: exp3.b2
+        text: Fixed production bugs in a Java billing module.
+education:
+  - id: edu1
+    institution: Example Institute of Technology (synthetic)
+    degree: B.Tech in Computer Science
+    level: bachelor
+    field: Computer Science
+    start: "2014-08"
+    end: "2018-05"
+    coursework: [Distributed Systems, Database Systems, Operating Systems]
+certifications:
+  - id: cert1
+    name: AWS Certified Developer – Associate
+    issuer: Amazon Web Services
+    date: "2021-09"
+projects:
+  - id: proj1
+    name: Event-driven ledger (personal project)
+    on_master_resume: false
+    description: Open-source double-entry ledger service.
+    url: https://example.com/synthetic-ledger
+    bullets:
+      - id: proj1.b1
+        text: Implemented an event-sourced ledger in Python with FastAPI and PostgreSQL, publishing balance events to Kafka.
+      - id: proj1.b2
+        text: Deployed the service to a local Kubernetes cluster with Helm for a learning exercise.
+achievements: []
+skills:
+  - {name: Python, proficiency: expert, years: 6}
+  - {name: Django, proficiency: advanced, years: 3}
+  - {name: Flask, proficiency: advanced, years: 2.5}
+  - {name: SQL, proficiency: advanced, years: 6}
+  - {name: PostgreSQL, proficiency: advanced, years: 4}
+  - {name: Redis, proficiency: intermediate, years: 2}
+  - {name: AWS, proficiency: intermediate, years: 3}
+  - {name: Docker, proficiency: intermediate, years: 3}
+  - {name: REST APIs, proficiency: expert, years: 6}
+  - {name: Unit Testing, proficiency: advanced}
+  - {name: Agile, proficiency: intermediate}
+  - {name: Java, proficiency: beginner, years: 1}
+  - {name: FastAPI, proficiency: intermediate, on_master_resume: false}
+  - {name: Kafka, proficiency: beginner, on_master_resume: false}
+  - {name: Prometheus, proficiency: intermediate, on_master_resume: false}
+  - {name: Grafana, proficiency: intermediate, on_master_resume: false}
+  - {name: Kubernetes, proficiency: exposure, on_master_resume: false}
+  - {name: GitHub Actions, proficiency: intermediate, on_master_resume: false}
+preferences:
+  target_roles: [Backend Engineer, Senior Software Engineer, Python Developer]
+  adjacent_roles: [Platform Engineer, Full Stack Engineer, Data Engineer]
+  locations: [Bengaluru, Pune, Remote - India]
+  remote: [remote, hybrid, onsite]
+  willing_to_relocate: false
+  employment_types: [full-time]
+  excluded_employers: [Excluded Corp (synthetic)]
+  languages: [English, Hindi]
+work_authorization:
+  authorized: {IN: citizen}
+  requires_sponsorship: {IN: false, US: true, GB: true}
+salary:
+  currency: INR
+  minimum: 3000000
+  expected: 3600000
+  interval: year
+  answer_text: "36 LPA (INR 3,600,000 per year), open to discussion"
+notice_period_days: 60
+availability_date: null
+approved_answers:
+  how_did_you_hear: Company careers page
+  willing_to_work_hybrid: "Yes"
+  gender: Prefer not to say
+  veteran_status: I am not a protected veteran
+  disability_status: I do not wish to answer
+  race_ethnicity: I do not wish to answer
+documents: {}
