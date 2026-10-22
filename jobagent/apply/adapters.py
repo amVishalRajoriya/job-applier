@@ -88,6 +88,7 @@ FIELDS_JS = r"""
 }
 """
 
+SUBMIT_SELECTOR = "form button[type=submit], form input[type=submit], form button:not([type])"
 CAPTCHA_SELECTORS = ["iframe[src*='recaptcha']", "iframe[title*='captcha' i]", ".g-recaptcha", ".h-captcha",
                      "[data-sitekey]", ".cf-turnstile", "iframe[src*='hcaptcha']", "iframe[src*='challenges.cloudflare']"]
 CLOSED = re.compile(r"no longer accepting applications|position has been filled|job (posting )?(is )?closed|"
@@ -104,10 +105,14 @@ RETRYABLE = re.compile(r"session (has )?expired|please try again|temporar(il)?y 
 class GenericFormAdapter:
     name = "generic_form"
 
-    def __init__(self, page: Page, allowed_domains: list[str], timeout_ms: int = 15000):
+    def __init__(self, page: Page, allowed_domains: list[str], timeout_ms: int = 15000, read_only: bool = False):
         self.page = page
         self.allowed = allowed_domains
         self.timeout = timeout_ms
+        # read_only (dry run): every request that could send data (any method but GET/HEAD/OPTIONS, from any
+        # frame or script) is aborted, and submit() refuses to run.
+        self.read_only = read_only
+        self.blocked_writes: list[str] = []
         self.violations: list[str] = []
         self.page.set_default_timeout(timeout_ms)
         page.on("request", self._watch)
@@ -120,7 +125,10 @@ class GenericFormAdapter:
             self.violations.append(request.url)
 
     def _guard(self, route, request) -> None:
-        if request.is_navigation_request() and request.frame == self.page.main_frame \
+        if self.read_only and request.method not in ("GET", "HEAD", "OPTIONS"):
+            self.blocked_writes.append(f"{request.method} {request.url}")
+            route.abort("blockedbyclient")
+        elif request.is_navigation_request() and request.frame == self.page.main_frame \
                 and not domain_allowed(request.url, self.allowed):
             route.abort("blockedbyclient")
         else:
@@ -163,6 +171,15 @@ class GenericFormAdapter:
             raise FatalError("the job is no longer accepting applications", closed=True)
         if self.page.locator("form").count() == 0:
             raise NeedsHuman("no application form found on the page (unsupported portal)")
+
+    def check_single_page(self) -> None:
+        """Multi-step wizards (a 'Next' button instead of a submit button) are not automated."""
+        buttons = self.page.locator(SUBMIT_SELECTOR)
+        labels = [(buttons.nth(i).inner_text() or buttons.nth(i).get_attribute("value") or "").strip()
+                  for i in range(buttons.count())]
+        if not labels or all(re.fullmatch(r"(next|continue|save and continue|proceed)\b.*", x, re.I) for x in labels):
+            raise NeedsHuman("the form has no submit button on this page (multi-step or script-driven form): "
+                             "finish this application manually with the prepared documents")
 
     def verify_identity(self, employer: str, title: str) -> None:
         text = self.body_text()
@@ -207,7 +224,9 @@ class GenericFormAdapter:
         }""")
 
     def submit(self) -> None:
-        btn = self.page.locator("button[type=submit], input[type=submit]").first
+        if self.read_only:
+            raise RuntimeError("dry run: submit is disabled")
+        btn = self.page.locator(SUBMIT_SELECTOR).first
         try:
             with self.page.expect_navigation(wait_until="domcontentloaded"):
                 btn.click()

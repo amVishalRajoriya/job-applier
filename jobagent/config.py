@@ -36,6 +36,7 @@ class Settings:
     max_job_age_days: int = 60
     relevance_threshold: float = 0.25
     sources: list[dict[str, Any]] = field(default_factory=list)
+    custom_skills: Any = field(default_factory=list)  # names, or {name: [aliases]}, added to the skill taxonomy
     extra_allowed_domains: list[str] = field(default_factory=list)
     http_timeout: float = 20.0
     http_retries: int = 3
@@ -44,6 +45,8 @@ class Settings:
     browser_headless: bool = True
     browser_timeout_ms: int = 15000
     max_apply_attempts: int = 3
+    pdf_output: bool = True        # also render each resume version as PDF (needs Chromium)
+    upload_format: str = "docx"    # which resume file to upload to forms: docx or pdf
     anthropic_model: str = "claude-opus-5-5"
     anthropic_effort: str = "medium"
     llm_enabled: bool = False
@@ -89,5 +92,8 @@ def load_settings(home: str | Path | None = None, config_file: str | Path | None
         s.browser_headless = False
     s.anthropic_model = os.environ.get("JOBAGENT_ANTHROPIC_MODEL", s.anthropic_model)
     s.llm_enabled = bool(os.environ.get("ANTHROPIC_API_KEY")) and os.environ.get("JOBAGENT_LLM", "1") != "0"
+    if s.custom_skills:
+        from .skills import register_custom_skills
+        register_custom_skills(s.custom_skills)
     s.ensure_dirs()
     return s

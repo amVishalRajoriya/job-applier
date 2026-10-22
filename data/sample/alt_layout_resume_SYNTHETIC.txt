@@ -1,0 +1,25 @@
+RAVI EXAMPLEPERSON
+SYNTHETIC TEST DATA
+ravi.exampleperson@example.com · +91 90000 11111 · Hyderabad, India
+
+Professional Summary
+Data engineer building batch and streaming pipelines.
+
+Work History
+Northwind Analytics (synthetic), Hyderabad, India
+Data Engineer
+Jan 2021 - Present
+• Built Airflow DAGs that load 2 TB of clickstream data into Snowflake every day.
+• Wrote PySpark jobs to deduplicate customer events.
+
+Contoso Retail (synthetic), Chennai, India
+Junior Data Analyst
+08/2018 – 12/2020
+• Created SQL reports for the merchandising team.
+• Automated weekly sales dashboards in Tableau.
+
+Education
+M.Sc. Statistics, Example University (synthetic), 2016 - 2018
+
+Technical Skills
+Python, SQL, Airflow, Spark, Snowflake, Tableau

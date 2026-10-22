@@ -264,7 +264,7 @@ def page(title: str, body: str) -> str:
 
 
 @app.get("/apply/{job_id}", response_class=HTMLResponse)
-def apply_form(job_id: int, request: Request):
+def apply_form(job_id: int, request: Request, variant: str = ""):
     job = BY_ID.get(job_id)
     if job is None:
         return HTMLResponse(page("Not found", "<h1>Job not found</h1>"), status_code=404)
@@ -285,8 +285,13 @@ def apply_form(job_id: int, request: Request):
     body = (f"<h1 class='app-title'>{html.escape(title)}</h1><div class='company-name'>at {html.escape(employer)}</div>"
             f"<div class='location'>{html.escape(job['location'])}</div>"
             f"<form id='application-form' method='post' enctype='multipart/form-data' action='/apply/{job_id}'>"
-            + "".join(form_fields(job)) + captcha +
-            "<button type='submit' id='submit_app'>Submit Application</button></form>")
+            + "".join(form_fields(job)) + captcha
+            + ("<button type='submit' id='next'>Next</button></form>" if variant == "wizard" else
+               "<button type='submit' id='submit_app'>Submit Application</button></form>"))
+    if variant == "autosave":
+        # a script that sends form data in the background, the way some portals autosave drafts
+        body += ("<script>setTimeout(() => fetch('/_admin/beacon', {method: 'POST', body: 'draft'}), 50);"
+                 "document.addEventListener('change', () => fetch('/_admin/beacon', {method: 'POST', body: 'x'}));</script>")
     return page(f"Apply: {title}", body)
 
 
@@ -328,6 +333,19 @@ def confirmation(job_id: int, ref: str):
     return page("Application submitted",
                 f"<h1>Application submitted</h1><p>Thank you for applying to {html.escape(job['title'])} at "
                 f"{html.escape(job['employer'])}.</p><p id='confirmation-number'>Reference: {ref}</p>")
+
+
+@app.post("/_admin/beacon")
+def admin_beacon():
+    with state_lock:
+        hits["beacon"] += 1
+    return {"ok": True}
+
+
+@app.get("/_admin/hits")
+def admin_hits():
+    with state_lock:
+        return JSONResponse(dict(hits))
 
 
 @app.get("/_admin/submissions")

@@ -20,7 +20,7 @@ cp .env.example .env                     # fill in, never commit
 python -m jobagent.cli keygen            # paste the output into JOBAGENT_ENCRYPTION_KEY in .env
 set -a; . ./.env; set +a
 python -m jobagent.cli init              # creates $JOBAGENT_HOME/config.yaml and the database
-python -m pytest                         # 43 tests, about 70 seconds
+python -m pytest                         # 57 tests, about 2 minutes
 ```
 
 `pip install -e .` also installs a `jobagent` command; the examples below use `python -m jobagent.cli`.
@@ -31,33 +31,81 @@ See [.env.example](.env.example). Secrets live only in the environment: the encr
 `ANTHROPIC_API_KEY` and the optional dashboard token. No passwords are stored anywhere; the agent never
 logs in to job sites.
 
-## Uploading the master resume and completing the profile
+## First-run setup
 
-1. Parse the resume into a draft (PDF with a text layer, DOCX, TXT or MD):
-   `python -m jobagent.cli profile parse-resume ~/resume.pdf --out profile.yaml`
-2. Open `profile.yaml` and check every field. Parsing is heuristic, so fix titles, employers, dates and bullets.
-3. Fill in what a resume does not say. The agent never infers these and pauses any application that needs them:
-   `work_authorization` (per country), `requires_sponsorship`, `salary` (or `answer_text`), `notice_period_days`,
-   `preferences` (target and adjacent roles, locations, remote, relocation, excluded employers), and
-   `approved_answers` for questions you are happy to pre-answer (for example "how did you hear about us", and
-   optional demographic questions if you want a fixed "decline to answer").
-4. Set each skill's `proficiency` (`expert`, `advanced`, `intermediate`, `beginner`, `exposure`). Scoring weights
-   credit by proficiency; listing a skill does not count as proof.
-5. Add verified evidence that is not on your master resume with `on_master_resume: false` (extra achievements,
-   projects, coursework). The optimizer may surface these when a job needs them, and never anything else.
-6. Import: `python -m jobagent.cli profile import profile.yaml`, then delete the plaintext YAML or keep it somewhere safe.
-   The stored copy is encrypted with `JOBAGENT_ENCRYPTION_KEY`.
+Pick one of three ways. All of them store the profile encrypted and write your boards into `config.yaml`.
 
-`data/sample/profile_SYNTHETIC.yaml` shows every field with synthetic values.
+**A. Details file (recommended).**
+```bash
+python -m jobagent.cli setup --template my_details.yaml       # blank file with every question explained
+# fill in my_details.yaml: work authorization and sponsorship per country, salary, notice period,
+# relocation, target roles and locations, skill levels, pre-approved answers, board URLs, mode
+python -m jobagent.cli setup --resume ~/resume.pdf --details my_details.yaml
+```
+
+**B. Guided questions.** `python -m jobagent.cli setup --resume ~/resume.pdf` asks each question in the
+terminal. Press Enter to skip one.
+
+**C. Dashboard.** `python -m jobagent.cli dashboard`, open http://127.0.0.1:8000/setup, then upload the resume
+and fill in the form. The same page has a YAML editor for correcting what the parser read.
+
+What setup does:
+- The resume is parsed (PDF with a text layer, DOCX, TXT or MD). Parsing is heuristic, so check the roles,
+  dates and bullets it prints. Fix them with `profile show` and `profile import`, or with the dashboard's editor.
+- Blank answers stay blank. Nothing is inferred, and any application that needs a blank field pauses for you.
+- Skill levels (`expert`, `advanced`, `intermediate`, `beginner`, `exposure`) drive scoring. A skill you declare
+  that is not on your resume is kept off the master resume.
+- Board URLs are turned into sources:
+
+  | URL | Source |
+  |---|---|
+  | `boards.greenhouse.io/<co>` | Greenhouse |
+  | `jobs.lever.co/<co>` | Lever |
+  | `jobs.ashbyhq.com/<co>` | Ashby |
+  | `<co>.wdN.myworkdayjobs.com/<Site>` | Workday |
+  | `.rss`, `.xml` or `.json` | Feed |
+  | Any other careers page | Careers page (read only when it publishes JobPosting data) |
+
+  LinkedIn and Indeed URLs are refused with an explanation.
+- Skills the built-in taxonomy does not know are added to `custom_skills` in `config.yaml`, so job ads that
+  mention them are matched.
+- Setup can set `mode` to `discovery` or `review`. It never turns on auto-apply.
+- Running setup again with a new resume keeps your answers and skill levels.
+
+To add true achievements that are not on your resume, use `profile show > p.yaml`. Add them with
+`on_master_resume: false`, then run `profile import p.yaml`. The optimizer may use these when a job needs them,
+and never anything else. `data/sample/profile_SYNTHETIC.yaml` shows every profile field with synthetic values.
+
+## Going live safely (do these in order)
+
+1. `python -m jobagent.cli check-sources` fetches each configured board once and prints what it found. It
+   stores nothing. This is the first real test of the Greenhouse, Lever, Ashby and Workday connectors.
+2. `python -m jobagent.cli llm-check` (optional) makes one small Claude API call if `ANTHROPIC_API_KEY` is set.
+   Without a key, the agent uses deterministic templates.
+3. `python -m jobagent.cli discover` and then `python -m jobagent.cli process`.
+4. `python -m jobagent.cli dry-run <job_id> --headful` opens the real application page and runs the same
+   checks as a submission (employer, title, closed, CAPTCHA, login, multi-step). It fills every field it can,
+   uploads the resume, saves a screenshot and a report under `documents/job_<id>/dry_run_<time>/`, and keeps
+   the browser open until you press Enter. **It never submits.** The adapter runs read-only:
+   - every request that could send data (any method other than GET, HEAD or OPTIONS, from the page or its
+     scripts) is aborted and listed in the report;
+   - the submit method refuses to run;
+   - the job's status is not changed.
+5. Compare the filled form with what you would have typed. When several dry runs on a site look right, use
+   review mode (`approve`, then `apply`) for real submissions on that site.
+6. Only after supervised review-mode submissions succeed on a site should you consider auto-apply for it.
+   Auto-apply needs a consent that names `untested_live`.
 
 ## Daily use
 
 ```bash
+python -m jobagent.cli check-sources     # test each source, store nothing
 python -m jobagent.cli discover          # fetch from sources in config.yaml
 python -m jobagent.cli process           # screen, score, optimize, prepare documents and answers
 python -m jobagent.cli jobs              # list; add --status READY_FOR_REVIEW
 python -m jobagent.cli show 12           # score breakdown, changes, answers, blockers
 python -m jobagent.cli answer 12 "Question text" "Your answer"
+python -m jobagent.cli dry-run 12 --headful   # fill the real form, screenshot, never submit
 python -m jobagent.cli approve 12        # review mode
 python -m jobagent.cli apply             # submits approved applications
 python -m jobagent.cli track 12 --status INTERVIEW --follow-up 2026-11-01 --response "Phone screen booked"
@@ -84,7 +132,7 @@ python -m jobagent.cli run --loop --interval 3600   # or call `run` from cron
      --apply-status tested_local untested_live
    ```
    `untested_live` is required for real Greenhouse or Lever forms because live submission on those sites has not
-   been verified yet (see below). Leave it out until you have watched a supervised run succeed (`JOBAGENT_HEADFUL=1`).
+   been verified yet (see below). Leave it out until dry runs and supervised review-mode submissions have succeeded on that site.
 3. Set `mode: auto` in `config.yaml` (or `JOBAGENT_MODE=auto`).
 4. `python -m jobagent.cli consent show` prints the active consent; `consent revoke` turns it off immediately.
 
@@ -116,18 +164,28 @@ python -m jobagent.cli run --loop --interval 3600   # or call `run` from cron
 
 ## Known limitations
 
-- Live job sites were not reachable from the build environment, so no connector or form adapter has been run
-  against a real employer yet. Treat Greenhouse and Lever submission as untested until a supervised run passes.
-- The model integration (`claude-opus-5-5`, with server-side refusal fallback) is implemented and tested with
-  fake clients, but no real API call was made because no API key was available. Without a key the agent uses
-  deterministic templates.
-- Resume parsing is heuristic; always review the draft. Scanned PDFs without a text layer are rejected.
-- Requirement extraction uses a curated skill taxonomy (`jobagent/skills.py`); skills outside it are matched
-  only through responsibility text overlap. Extend the taxonomy for niche fields.
+- **Live job sites were not reachable from the build environment.** Its proxy refused outbound connections
+  (rechecked 2026-10-22), so no connector or form adapter has been run against a real employer yet. Greenhouse,
+  Lever, Ashby and Workday discovery and Greenhouse/Lever form filling stay marked untested until
+  `check-sources` and `dry-run` succeed on your machine.
+- The model integration (`claude-opus-5-5`, with server-side refusal fallback) is tested only with fake clients.
+  No API key was available. `llm-check` verifies it with your key. Without a key the agent uses deterministic
+  templates.
+- Resume parsing is heuristic. It is tested on two layouts (the synthetic master resume as PDF, DOCX and MD,
+  and `data/sample/alt_layout_resume_SYNTHETIC.txt`). Always review the parsed roles. Scanned PDFs without a
+  text layer are rejected.
+- Requirement extraction uses a curated skill taxonomy (`jobagent/skills.py`). It can be extended with
+  `custom_skills` in `config.yaml`, which setup fills from your own skill list.
 - The rubric is this tool's own and is not any employer's ATS score.
-- The generic form adapter handles label-based HTML forms. Multi-page wizards, custom widgets and file pickers
-  driven by JavaScript frameworks will pause for manual completion.
-- PDF resume output is not generated (DOCX, TXT and HTML are); most ATS accept DOCX.
+- The generic form adapter handles single-page, label-based HTML forms.
+  - A form with only a Next or Continue button (a multi-step wizard) pauses with that reason, so you finish it
+    yourself using the prepared documents.
+  - Custom JavaScript widgets may not fill. A dry run shows which ones before anything is submitted.
+- The dry-run guard intercepts requests the browser routes, from the page and its frames. WebSocket messages and
+  service-worker requests are not intercepted. The application pages it is meant for do not submit that way, but
+  watch the headful window.
+- PDF resumes are rendered with Chromium (`pdf_output: true`). Forms receive the DOCX unless you set
+  `upload_format: pdf`.
 - Single-user, single-machine design (SQLite). Run one scheduler at a time.
 
 ## Sample end-to-end run

@@ -5,11 +5,12 @@ import os
 import secrets
 from pathlib import Path
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from .. import pipeline, report
+from .. import onboarding, pipeline, report
+from .. import profile as P
 from ..config import Settings
 from ..db import STATUSES, Database, loads
 
@@ -120,6 +121,103 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         media = {"csv": "text/csv", "json": "application/json", "html": "text/html"}[fmt]
         return Response(report.export(db, fmt), media_type=media,
                         headers={"Content-Disposition": f"attachment; filename=applications.{fmt}"})
+
+    # ---- first-run setup ------------------------------------------------------------------------
+    config_path = settings.home / "config.yaml"
+
+    def current_sources() -> list[dict]:
+        import yaml
+        return (yaml.safe_load(config_path.read_text()) or {}).get("sources") or [] if config_path.exists() else []
+
+    @app.get("/setup", response_class=HTMLResponse)
+    def setup_page(request: Request, msg: str = "", err: str = ""):
+        try:
+            prof = P.load(db)
+        except LookupError:
+            prof = None
+        srcs = current_sources()
+        return TEMPLATES.TemplateResponse(request, "setup.html", {
+            "profile": prof, "rows": onboarding.form_rows(prof) if prof else [], "csrf": csrf, "msg": msg, "err": err,
+            "todo": onboarding.unanswered(prof) if prof else [],
+            "profile_yaml": P.to_yaml(prof) if prof else "",
+            "boards": "\n".join(line for c in srcs for line in onboarding.source_to_entry(c)),
+            "kept_sources": [c for c in srcs if not onboarding.source_to_entry(c)],
+            "levels": ["unknown", "exposure", "beginner", "intermediate", "advanced", "expert"]})
+
+    def back(msg: str = "", err: str = "") -> RedirectResponse:
+        from urllib.parse import urlencode
+        return RedirectResponse("/setup?" + urlencode({"msg": msg, "err": err}), status_code=303)
+
+    @app.post("/setup/resume")
+    async def setup_resume(file: UploadFile = File(...), csrf_token: str = Form("")):
+        check_csrf(csrf_token)
+        from ..resume_parser import parse_resume
+        ext = Path(file.filename or "").suffix.lower()
+        if ext not in (".pdf", ".docx", ".txt", ".md"):
+            return back(err="upload a PDF (with a text layer), DOCX, TXT or MD file")
+        data = await file.read()
+        if len(data) > 10 * 1024 * 1024:
+            return back(err="file is larger than 10 MB")
+        up = settings.home / "uploads"
+        up.mkdir(mode=0o700, exist_ok=True)
+        path = up / f"master_resume{ext}"
+        path.write_bytes(data)
+        try:
+            parsed, _ = parse_resume(str(path))
+        except Exception as e:
+            return back(err=f"could not read the resume: {e}")
+        try:
+            parsed = onboarding.merge_resume(P.load(db), parsed)
+        except LookupError:
+            pass
+        P.save(db, parsed, actor="candidate (dashboard setup)")
+        custom = onboarding.unknown_skills(parsed)
+        if custom:
+            onboarding.update_config(config_path, custom_skills=custom)
+        return back(msg=f"resume read: {len(parsed.experience)} roles, {sum(len(e.bullets) for e in parsed.experience)} "
+                        "bullets. Check the parsed profile below.")
+
+    @app.post("/setup/details")
+    async def setup_details(request: Request):
+        form = await request.form()
+        check_csrf(str(form.get("csrf_token", "")))
+        try:
+            prof = P.load(db)
+        except LookupError:
+            return back(err="upload your resume first")
+        details: dict = {}
+        for q in onboarding.QUESTIONS:
+            v = str(form.get(q["key"], "")).strip()
+            if v:
+                onboarding._set(details, q["key"], v)
+        details["skills"] = {k[6:]: str(v) for k, v in form.items() if k.startswith("skill:") and v and v != "unknown"}
+        try:
+            prof = onboarding.apply_details(prof, details)
+        except ValueError as e:
+            return back(err=str(e))
+        P.save(db, prof, actor="candidate (dashboard setup)")
+        boards = [x for x in str(form.get("boards", "")).splitlines() if x.strip()]
+        sources, problems = onboarding.boards_from_entries(boards)
+        kept = [c for c in current_sources() if not onboarding.source_to_entry(c)]
+        mode = str(form.get("mode", "")) or None
+        try:
+            onboarding.update_config(config_path, sources=kept + sources, mode=mode)
+        except ValueError as e:
+            return back(err=str(e))
+        if mode:
+            settings.mode = mode
+        return back(msg="saved" + (f"; skipped: {'; '.join(problems)}" if problems else ""))
+
+    @app.post("/setup/profile")
+    def setup_profile(profile_yaml: str = Form(...), csrf_token: str = Form("")):
+        check_csrf(csrf_token)
+        import yaml
+        try:
+            prof = P.Profile.model_validate(yaml.safe_load(profile_yaml))
+        except Exception as e:
+            return back(err=f"profile not saved: {str(e)[:500]}")
+        P.save(db, prof, actor="candidate (dashboard setup)")
+        return back(msg="profile saved")
 
     @app.get("/audit", response_class=HTMLResponse)
     def audit(request: Request):

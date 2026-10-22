@@ -9,9 +9,9 @@ from pathlib import Path
 
 import yaml
 
-from . import pipeline, report
+from . import onboarding, pipeline, report
 from . import profile as P
-from .apply import policy
+from .apply import engine, policy
 from .config import load_settings
 from .db import STATUSES, Database, loads
 from .resume_parser import bullet_skill_gaps, parse_resume
@@ -34,6 +34,9 @@ max_job_age_days: 60
 relevance_threshold: 0.25
 per_host_min_interval: 1.0
 extra_allowed_domains: []
+pdf_output: true           # also write each resume version as PDF (needs Chromium)
+upload_format: docx        # resume file uploaded to forms: docx or pdf
+custom_skills: []          # skills the built-in taxonomy lacks, e.g. [Temporal, ClickHouse]; `setup` fills this
 sources:
   # Greenhouse board token = the part after boards.greenhouse.io/
   # - {type: greenhouse, board_token: examplecompany, employer: Example Company}
@@ -69,6 +72,129 @@ def cmd_init(args):
         print(f"wrote {cfg}")
     Database(s.db_path)
     print(f"database at {s.db_path}")
+
+
+def cmd_setup(args):
+    """Guided first run: resume -> profile, personal details, boards, mode."""
+    s = load_settings(args.home)
+    cfg = s.home / "config.yaml"
+    if not cfg.exists():
+        cfg.write_text(CONFIG_TEMPLATE)
+    db = Database(s.db_path)
+    if args.template:
+        Path(args.template).write_text(onboarding.details_template())
+        print(f"wrote {args.template}: fill it in, then run `jobagent setup --resume <file> --details {args.template}`")
+        return
+    if args.resume:
+        prof, _ = parse_resume(args.resume)
+        print(f"read {args.resume}: {len(prof.experience)} roles, {sum(len(e.bullets) for e in prof.experience)} "
+              f"bullets, {len(prof.education)} education entries, {len(prof.skills)} skills")
+        for e in prof.experience:
+            print(f"  - {e.title} at {e.employer} ({e.start} to {e.end or 'present'}, {len(e.bullets)} bullets)")
+        try:
+            old = P.load(db)
+            prof = onboarding.merge_resume(old, prof)
+            print("kept the personal details already saved")
+        except LookupError:
+            pass
+    else:
+        try:
+            prof = P.load(db)
+        except LookupError:
+            sys.exit("give your resume: jobagent setup --resume path/to/resume.pdf (PDF with text, DOCX, TXT or MD)")
+    boards: list = []
+    mode = None
+    if args.details:
+        details = yaml.safe_load(Path(args.details).read_text()) or {}
+        boards, mode = details.get("boards") or [], details.get("mode")
+    elif sys.stdin.isatty() and not args.non_interactive:
+        details, boards = onboarding.interview(prof)
+    else:
+        details = {}
+    prof = onboarding.apply_details(prof, details)
+    P.save(db, prof, actor="candidate (setup)")
+    sources, problems = onboarding.boards_from_entries(boards)
+    custom = onboarding.unknown_skills(prof)
+    onboarding.update_config(cfg, sources=sources if boards else None, custom_skills=custom, mode=mode)
+    enc = db.one("SELECT encrypted FROM profile WHERE id=1")["encrypted"]
+    print(f"profile saved ({'encrypted' if enc else 'NOT encrypted: set JOBAGENT_ENCRYPTION_KEY and run setup again'})")
+    if sources:
+        print(f"{len(sources)} boards written to {cfg}:")
+        for c in sources:
+            print(f"  - {c['type']}: {c.get('board_token') or c.get('site') or c.get('organization') or c.get('url') or c.get('urls')}"
+                  + (f" ({c['employer']})" if c.get("employer") else ""))
+    for p in problems:
+        print(f"  skipped: {p}")
+    if custom:
+        print("added to custom_skills so job ads mentioning them are matched: " + ", ".join(custom))
+    gaps = bullet_skill_gaps(prof)
+    if gaps:
+        print("skills used in your bullets but not in your skills list (add only if accurate): " + ", ".join(gaps))
+    todo = onboarding.unanswered(prof)
+    if todo:
+        print("still blank (applications that need these will pause for you): " + ", ".join(todo))
+    print("Next: check the parsed resume with `jobagent profile show` or the dashboard's Setup page, then "
+          "`jobagent check-sources`.")
+
+
+def cmd_check_sources(args):
+    """Fetch every configured source once and report, without storing anything."""
+    from .http import PoliteClient
+    from .sources.registry import build_sources
+    s = load_settings(args.home)
+    if not s.sources:
+        sys.exit("no sources in config.yaml yet: run `jobagent setup` with your board URLs")
+    http = PoliteClient(s.user_agent, s.http_timeout, s.http_retries, s.per_host_min_interval)
+    ok = 0
+    try:
+        for cfg, src in zip(s.sources, build_sources(s.sources, http)):
+            label = f"{cfg['type']}:{cfg.get('board_token') or cfg.get('site') or cfg.get('organization') or cfg.get('tenant') or cfg.get('url') or cfg.get('urls')}"
+            try:
+                jobs = list(src.fetch())
+            except Exception as e:
+                print(f"FAIL {label}: {type(e).__name__}: {str(e)[:200]}")
+                continue
+            ok += 1
+            print(f"OK   {label}: {len(jobs)} jobs" + "".join(f"\n       {j.title} | {j.location or '?'} | {j.application_url}"
+                                                        for j in jobs[:3]))
+    finally:
+        http.close()
+    print(f"{ok}/{len(s.sources)} sources fetched. Nothing was stored.")
+
+
+def cmd_llm_check(args):
+    """One small real call to the Claude API to confirm the key and model work."""
+    import logging
+    import os
+    from .llm import ClaudeLLM
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
+    s = load_settings(args.home)
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        sys.exit("ANTHROPIC_API_KEY is not set: the agent runs with deterministic templates (that is fine)")
+    out = ClaudeLLM(s.anthropic_model, "low").json(
+        "Reply with JSON only.", "Return ok=true.",
+        {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"], "additionalProperties": False},
+        max_tokens=200)
+    if out and out.get("ok") is True:
+        print(f"Claude API works with model {s.anthropic_model}")
+    else:
+        sys.exit(f"Claude API call failed (see the message above); the agent will fall back to templates")
+
+
+def cmd_dry_run(args):
+    s, db = _ctx(args)
+    hold = None
+    if args.headful:
+        hold = lambda: input("The browser stays open so you can look at the filled form. Nothing is submitted. "
+                             "Press Enter to close it... ")  # noqa: E731
+    rep = engine.dry_run(db, s, _profile(db), args.job_id, headful=True if args.headful else None, hold=hold)
+    print(f"{rep['outcome']}: {rep['detail']}")
+    for f in rep["fields"]:
+        print(f"  {f['action']:10} {f['field']}: {str(f['value'])[:70]}")
+    for q in rep["open_questions"]:
+        print(f"  OPEN       {q['question']}" + (f" ({q['note']})" if q.get("note") else ""))
+    print(f"requests blocked because they could send data: {len(rep['blocked_requests'])}")
+    print(f"report: {rep['report']}\nscreenshot: {rep['evidence'].get('screenshot', 'none')}\nNothing was submitted.")
 
 
 def cmd_parse_resume(args):
@@ -254,6 +380,19 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("keygen", help="print a new encryption key for JOBAGENT_ENCRYPTION_KEY").set_defaults(fn=cmd_keygen)
     sub.add_parser("init", help="create the data directory and config.yaml").set_defaults(fn=cmd_init)
+    x = sub.add_parser("setup", help="guided first run: resume, personal details, boards")
+    x.add_argument("--resume", help="your master resume (PDF with a text layer, DOCX, TXT or MD)")
+    x.add_argument("--details", help="a filled-in details file (see --template)")
+    x.add_argument("--template", metavar="FILE", help="write a blank details file to fill in, then stop")
+    x.add_argument("--non-interactive", action="store_true", help="do not ask questions")
+    x.set_defaults(fn=cmd_setup)
+    sub.add_parser("check-sources", help="fetch each configured source once and report (stores nothing)"
+                   ).set_defaults(fn=cmd_check_sources)
+    sub.add_parser("llm-check", help="make one small Claude API call to confirm the key works").set_defaults(fn=cmd_llm_check)
+    x = sub.add_parser("dry-run", help="fill a job's real application form without submitting, and screenshot it")
+    x.add_argument("job_id", type=int)
+    x.add_argument("--headful", action="store_true", help="show the browser and keep it open until you press Enter")
+    x.set_defaults(fn=cmd_dry_run)
     p = sub.add_parser("profile", help="candidate profile")
     ps = p.add_subparsers(dest="pcmd", required=True)
     x = ps.add_parser("parse-resume", help="parse a master resume into a draft profile YAML")

@@ -56,6 +56,7 @@ def env(tmp_path, monkeypatch, profile):
     s.per_host_min_interval = 0
     s.browser_timeout_ms = 8000
     s.http_retries = 1
+    s.pdf_output = False  # one test turns it on; Chromium per version slows the suite
     db = Database(s.db_path)
     P.save(db, profile)
     return s, db, profile

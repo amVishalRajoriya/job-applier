@@ -148,6 +148,27 @@ def _index():
     return _alias_index()
 
 
+def register_custom_skills(entries) -> None:
+    """Add skills the taxonomy lacks (config `custom_skills`): a list of names, or {name: [aliases]}."""
+    items = entries.items() if isinstance(entries, dict) else ((e, []) for e in entries or [])
+    changed = False
+    for name, aliases in items:
+        name = str(name).strip()
+        if not name or len(name) < 2:
+            continue
+        existing = next((k for k in SKILLS if k.lower() == name.lower()), None)
+        if existing is None:
+            SKILLS[name] = [str(a).lower() for a in aliases or []]
+            changed = True
+        else:
+            new = [str(a).lower() for a in aliases or [] if str(a).lower() not in SKILLS[existing]]
+            if new:
+                SKILLS[existing] = list(SKILLS[existing]) + new
+                changed = True
+    if changed:
+        _index.cache_clear()
+
+
 def extract_skills(text: str) -> set[str]:
     """Canonical skills explicitly mentioned in text."""
     found: set[str] = set()

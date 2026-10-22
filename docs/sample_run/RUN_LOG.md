@@ -51,7 +51,7 @@ Baseline 49.6 -> final 67.4 (below_target_honest).
 - add_bullet exp1: verified achievement not on the master resume matches the job (+5.8)
   - after: Added Prometheus metrics and Grafana dashboards for payment API latency and error rates.
 - summary summary: summary restated from verified facts relevant to the job
-  - after: Senior Software Engineer with 8 years of experience in payments, working with Python, REST APIs, Prometheus, Grafana and FastAPI.
+  - after: Senior Software Engineer with 8 years of experience in payments, working with Python, REST APIs, Grafana, Prometheus and FastAPI.
 - reorder_bullets exp1: most relevant evidence first
   - after: exp1.b6, exp1.b1, exp1.b4, exp1.b2, exp1.b3
 - reorder_skills skills: requested skills first

@@ -1,0 +1,66 @@
+# Your details for `jobagent setup --details this-file.yaml`
+#
+# A resume does not say these things, so the agent never guesses them. Fill in what applies and
+# leave the rest blank: any application that needs a blank field pauses and asks you.
+# Keep this file private (it holds personal data); after setup it is stored encrypted and you can delete it.
+
+contact:
+  name:                      # as it should appear on applications
+  email:
+  phone:                     # with country code, e.g. "+91 98xxxxxxxx"
+  location:                  # e.g. "Bengaluru, India"
+  linkedin:                  # optional
+  github:                    # optional
+
+work_authorization:
+  # Countries where you can work today, with your status in your own words.
+  authorized:
+    # IN: citizen
+  # Do you need visa sponsorship to work there? One line per country you would apply in.
+  requires_sponsorship:
+    # IN: no
+    # US: yes
+
+salary:
+  currency:                  # e.g. INR
+  expected:                  # per year, a number, e.g. 3500000 (optional if you give answer_text)
+  minimum:                   # optional; jobs advertising less than this are skipped
+  answer_text:               # exact words for "expected salary" questions, e.g. "Negotiable, 35-40 LPA"
+
+notice_period_days:          # e.g. 60
+availability_date:           # optional, YYYY-MM-DD
+
+preferences:
+  target_roles: []           # e.g. [Backend Engineer, Senior Software Engineer]
+  adjacent_roles: []         # optional, e.g. [Platform Engineer]
+  locations: []              # e.g. [Bengaluru, Remote India]
+  remote: [remote, hybrid, onsite]   # remove what you do not accept
+  willing_to_relocate:       # yes or no
+  employment_types: [full-time]
+  excluded_employers: []     # employers to never apply to (e.g. your current employer)
+  excluded_keywords: []      # skip titles containing these, e.g. [Intern, Principal]
+
+# Your honest level for each skill: expert, advanced, intermediate, beginner or exposure.
+# Scoring and the resume summary use these levels; a skill you list here that is not on your resume
+# is kept off the master resume.
+skills:
+  # Python: advanced
+
+# Answers you are happy for the agent to reuse word for word on forms.
+# Anything not answered here is asked of you per application.
+approved_answers:
+  # "How did you hear about us?": "Company careers page"
+  # "Gender": "Prefer not to say"
+
+# Company job boards to watch: one careers URL per line. Supported for discovery:
+#   https://boards.greenhouse.io/<company>   https://jobs.lever.co/<company>
+#   https://jobs.ashbyhq.com/<company>        https://<company>.wd5.myworkdayjobs.com/<Site>
+#   a careers page (read only if it publishes schema.org JobPosting data), or an RSS/JSON feed.
+# Write "Employer Name | URL" to set the employer's display name.
+# LinkedIn and Indeed cannot be automated; add jobs from there to a manual jobs file.
+boards:
+  # - https://boards.greenhouse.io/examplecompany
+
+# discovery (find and score only) or review (prepare applications, submit only what you approve).
+# Auto-apply is never turned on here; it needs `jobagent consent grant`.
+mode: discovery

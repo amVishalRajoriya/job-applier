@@ -2,7 +2,7 @@ Asha Testcandidate
 Bengaluru, India | asha.testcandidate@example.com | +91 90000 00000 | https://linkedin.com/in/asha-testcandidate-synthetic
 
 SUMMARY
-Senior Software Engineer with 8 years of experience in payments, working with Python, REST APIs, Prometheus, Grafana and FastAPI.
+Senior Software Engineer with 8 years of experience in payments, working with Python, REST APIs, Grafana, Prometheus and FastAPI.
 
 EXPERIENCE
 Senior Software Engineer — Paywise Technologies (synthetic) | Bengaluru, India | Mar 2022 – Present

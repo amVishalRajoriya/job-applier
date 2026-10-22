@@ -11,7 +11,8 @@ import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterator
+from dataclasses import replace
+from typing import Callable, Iterator
 
 from ..answers import answer as answer_question
 from ..browser import launch_chromium
@@ -61,6 +62,49 @@ def build_answers(fields: list[FormField], profile: Profile, job: dict, existing
     return out
 
 
+def _open_and_check(a: GenericFormAdapter, job) -> None:
+    """Open the application page and stop on anything that is not a fillable, single-page form for this job."""
+    a.open(job["application_url"])
+    a.check_open()
+    a.verify_identity(job["employer"], job["title"])
+    blockers = a.detect_blockers()
+    if blockers:
+        raise NeedsHuman("; ".join(blockers))
+    a.check_single_page()
+
+
+def _open_questions(current: dict, answers: dict) -> tuple[list[str], list[str]]:
+    """Required questions not seen when the application was prepared, and required questions still unanswered."""
+    new_q = [lbl for lbl, v in current.items() if lbl not in answers and v["required"]]
+    unresolved = [lbl for lbl, v in current.items() if v["required"] and v["status"] not in ("answered", "file")]
+    return new_q, unresolved
+
+
+def _fill_form(a: GenericFormAdapter, fields: list[FormField], current: dict, files: dict,
+               strict: bool = True, resume_format: str = "docx") -> list[dict]:
+    """Fill answered fields and upload documents. Returns what was done, field by field."""
+    log = []
+    for f in fields:
+        v = current[f.label]
+        if v["status"] == "file":
+            path = (files.get(resume_format) or files.get("docx")) if v["kind"] == "resume" \
+                else files.get("cover_letter_docx")
+            if path and Path(path).exists():
+                a.upload(f, path)
+                log.append({"field": f.label, "action": "uploaded", "value": Path(path).name})
+            elif f.required and strict:
+                raise NeedsHuman(f"no document available for required upload '{f.label}'")
+            else:
+                log.append({"field": f.label, "action": "left empty", "value": "no document available"})
+        elif v["status"] == "answered" and v["value"] not in (None, ""):
+            a.fill(f, str(v["value"]))
+            log.append({"field": f.label, "action": "filled", "value": str(v["value"]), "source": v.get("source")})
+        else:
+            log.append({"field": f.label, "action": "left empty", "value": v.get("note") or v["status"],
+                        "required": f.required})
+    return log
+
+
 def inspect_form(settings: Settings, job) -> list[FormField]:
     """Open the form without filling or submitting, to collect its questions for review."""
     url = job["application_url"]
@@ -71,13 +115,8 @@ def inspect_form(settings: Settings, job) -> list[FormField]:
         try:
             with isolated_page(settings) as page:
                 a = GenericFormAdapter(page, allowed_domains_for(url, settings.extra_allowed_domains),
-                                       settings.browser_timeout_ms)
-                a.open(url)
-                a.check_open()
-                a.verify_identity(job["employer"], job["title"])
-                blockers = a.detect_blockers()
-                if blockers:
-                    raise NeedsHuman("; ".join(blockers))
+                                       settings.browser_timeout_ms, read_only=True)
+                _open_and_check(a, job)
                 return a.fields()
         except TransientError:
             if attempt == settings.max_apply_attempts:
@@ -144,8 +183,6 @@ def submit(db: Database, settings: Settings, profile: Profile, job_id: int, acto
                       "the prepared documents")
     rv = db.resume_version(app["resume_version_id"])
     files = loads(rv["files"], {})
-    resume_path = files.get("docx")
-    cover_path = files.get("cover_letter_docx")
     answers = loads(app["answers"], {})
     out_dir = settings.documents_dir / f"job_{job_id}"
     allowed = allowed_domains_for(url, settings.extra_allowed_domains)
@@ -157,32 +194,16 @@ def submit(db: Database, settings: Settings, profile: Profile, job_id: int, acto
             with isolated_page(settings) as page:
                 a = GenericFormAdapter(page, allowed, settings.browser_timeout_ms)
                 try:
-                    a.open(url)
-                    a.check_open()
-                    a.verify_identity(job["employer"], job["title"])
-                    blockers = a.detect_blockers()
-                    if blockers:
-                        raise NeedsHuman("; ".join(blockers))
+                    _open_and_check(a, job)
                     fields = a.fields()
                     current = build_answers(fields, profile, dict(job), answers)
-                    new_q = [lbl for lbl, v in current.items() if lbl not in answers and v["required"]]
-                    unresolved = [lbl for lbl, v in current.items()
-                                  if v["required"] and v["status"] not in ("answered", "file")]
+                    new_q, unresolved = _open_questions(current, answers)
                     if new_q or unresolved:
                         merged = {**current, **{k: v for k, v in answers.items() if k in current and v.get("source") == "candidate"}}
                         db.upsert_application(job_id, app["idempotency_key"], answers=merged)
                         raise NeedsHuman("questions need the candidate: " + "; ".join(sorted(set(new_q + unresolved))),
                                          [{"question": q, **current[q]} for q in sorted(set(new_q + unresolved))])
-                    for f in fields:
-                        v = current[f.label]
-                        if v["status"] == "file":
-                            path = resume_path if v["kind"] == "resume" else cover_path
-                            if path and Path(path).exists():
-                                a.upload(f, path)
-                            elif f.required:
-                                raise NeedsHuman(f"no document available for required upload '{f.label}'")
-                        elif v["status"] == "answered" and v["value"] not in (None, ""):
-                            a.fill(f, str(v["value"]))
+                    _fill_form(a, fields, current, files, resume_format=settings.upload_format)
                     invalid = a.invalid_required()
                     if invalid:
                         raise NeedsHuman(f"form still has invalid or empty fields: {invalid}")
@@ -228,6 +249,82 @@ def submit(db: Database, settings: Settings, profile: Profile, job_id: int, acto
                           next_retry_at=retry_at)
     db.set_status(job_id, "FAILED", actor, f"gave up after {settings.max_apply_attempts} attempts: {last_error}")
     return {"outcome": "failed", "status": "FAILED", "detail": last_error, "next_retry_at": retry_at}
+
+
+def dry_run(db: Database, settings: Settings, profile: Profile, job_id: int, actor: str = "candidate",
+            headful: bool | None = None, hold: Callable[[], None] | None = None) -> dict:
+    """Supervised rehearsal of an application on the real page. Never submits.
+
+    The page is opened, checked, filled and screenshotted with the adapter in read-only mode: every
+    request that could send data is aborted and the submit method refuses to run. The job's status is
+    not changed. `hold` is called before the browser closes, so a headful run can be inspected.
+    """
+    job = db.job(job_id)
+    if not job:
+        raise LookupError(f"no job {job_id}")
+    app = db.application(job_id)
+    if not app or not app["resume_version_id"]:
+        raise ValueError(f"job {job_id} has no prepared application yet: run `process` first")
+    url = job["application_url"]
+    key, apply_status, _ = capability_for(url)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    out_dir = settings.documents_dir / f"job_{job_id}" / f"dry_run_{ts}"
+    rep = {"job_id": job_id, "title": job["title"], "employer": job["employer"], "url": url, "source": key,
+           "apply_status": apply_status, "at": ts, "submitted": False, "outcome": None, "detail": None,
+           "fields": [], "open_questions": [], "invalid_fields": [], "blocked_requests": [], "evidence": {}}
+    if apply_status not in ("tested_local", "untested_live"):
+        rep.update(outcome="no_adapter", detail=f"{key}: no automated adapter ({apply_status}); apply manually")
+        return _finish_dry_run(db, actor, rep, out_dir)
+    files = loads(db.resume_version(app["resume_version_id"])["files"], {})
+    answers = loads(app["answers"], {})
+    s = replace(settings, browser_headless=not headful) if headful is not None else settings
+    with isolated_page(s) as page:
+        a = GenericFormAdapter(page, allowed_domains_for(url, settings.extra_allowed_domains),
+                               settings.browser_timeout_ms, read_only=True)
+        try:
+            _open_and_check(a, job)
+            fields = a.fields()
+            current = build_answers(fields, profile, dict(job), answers)
+            new_q, unresolved = _open_questions(current, answers)
+            rep["fields"] = _fill_form(a, fields, current, files, strict=False, resume_format=settings.upload_format)
+            rep["open_questions"] = [{"question": q, "new": q in new_q, "note": current[q].get("note")}
+                                     for q in sorted(set(new_q + unresolved))]
+            rep["invalid_fields"] = a.invalid_required()
+            ready = not (rep["open_questions"] or rep["invalid_fields"])
+            rep["outcome"] = "ready_to_submit" if ready else "needs_input"
+            rep["detail"] = ("every required field is filled; submit was NOT clicked" if ready else
+                             "answer the open questions before this application can be submitted")
+        except NeedsHuman as e:
+            rep.update(outcome="needs_human", detail=e.reason)
+        except FatalError as e:
+            rep.update(outcome="closed" if e.closed else "blocked", detail=str(e))
+        except TransientError as e:
+            rep.update(outcome="transient_error", detail=str(e))
+        rep["evidence"] = _evidence(page, out_dir, "dry_run")
+        rep["blocked_requests"] = list(a.blocked_writes)
+        if hold:
+            hold()
+    return _finish_dry_run(db, actor, rep, out_dir)
+
+
+def _finish_dry_run(db, actor, rep: dict, out_dir: Path) -> dict:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "report.json").write_text(dumps(rep))
+    lines = [f"# Dry run: {rep['title']} at {rep['employer']}", "", "Nothing was submitted.", "",
+             f"- URL: {rep['url']}", f"- Source: {rep['source']} ({rep['apply_status']})",
+             f"- Outcome: **{rep['outcome']}**: {rep['detail']}",
+             f"- Screenshot: {rep['evidence'].get('screenshot', 'none')}",
+             f"- Requests blocked because they could send data: {len(rep['blocked_requests'])}", "",
+             "| Field | Action | Value |", "|---|---|---|"]
+    lines += [f"| {f['field']} | {f['action']} | {str(f['value'])[:80]} |" for f in rep["fields"]]
+    if rep["open_questions"]:
+        lines += ["", "## Open questions", ""] + [f"- {q['question']}" + (f" ({q['note']})" if q["note"] else "")
+                                                  for q in rep["open_questions"]]
+    (out_dir / "report.md").write_text("\n".join(lines) + "\n")
+    rep["report"] = str(out_dir / "report.md")
+    db.audit(actor, "dry_run", "job", rep["job_id"], outcome=rep["outcome"], detail=rep["detail"],
+             report=rep["report"], blocked_requests=len(rep["blocked_requests"]), submitted=False)
+    return rep
 
 
 def _record(db, job_id, app, actor, status, reference, evidence, note) -> dict:

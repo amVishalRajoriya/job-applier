@@ -1,4 +1,4 @@
-"""Render resume versions (DOCX, TXT, HTML) and cover letters."""
+"""Render resume versions (DOCX, TXT, HTML, PDF) and cover letters."""
 from __future__ import annotations
 
 import html
@@ -117,7 +117,21 @@ def render_docx(doc: ResumeDoc, path: Path) -> Path:
     return path
 
 
-def write_version(doc: ResumeDoc, out_dir: Path, stem: str) -> dict[str, str]:
+def render_pdf(html_text: str, path: Path) -> Path | None:
+    """PDF via headless Chromium. Best effort: returns None if the browser is unavailable."""
+    try:
+        from .browser import launch_chromium
+        with launch_chromium(headless=True) as (_, browser):
+            page = browser.new_page(java_script_enabled=False)
+            page.route("**/*", lambda route: route.abort())  # the resume HTML is self-contained
+            page.set_content(html_text)
+            page.pdf(path=str(path), format="A4", margin={"top": "14mm", "bottom": "14mm", "left": "14mm", "right": "14mm"})
+        return path
+    except Exception:
+        return None
+
+
+def write_version(doc: ResumeDoc, out_dir: Path, stem: str, pdf: bool = False) -> dict[str, str]:
     out_dir.mkdir(parents=True, exist_ok=True)
     try:
         os.chmod(out_dir, 0o700)
@@ -130,6 +144,8 @@ def write_version(doc: ResumeDoc, out_dir: Path, stem: str) -> dict[str, str]:
     }
     Path(files["txt"]).write_text(render_text(doc))
     Path(files["html"]).write_text(render_html(doc))
+    if pdf and render_pdf(render_html(doc), out_dir / f"{stem}.pdf"):
+        files["pdf"] = str(out_dir / f"{stem}.pdf")
     return files
 
 

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Setup{% endblock %}
+{% block body %}
+<h2>Setup</h2>
+{% if msg %}<section class="ok">{{ msg }}</section>{% endif %}
+{% if err %}<section class="bad">{{ err }}</section>{% endif %}
+<p class="muted">Nothing here is guessed for you. Leave a field blank if it does not apply; applications that need it pause and ask you.</p>
+
+<section><h3>1. Master resume</h3>
+<form method="post" action="/setup/resume" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<input type="file" name="file" accept=".pdf,.docx,.txt,.md" required> <button>Upload and read</button>
+<span class="muted">PDF with a text layer, DOCX, TXT or MD. Uploading again keeps your answers below.</span>
+</form>
+{% if profile %}<p>Read: {{ profile.experience|length }} roles, {{ profile.education|length }} education entries, {{ profile.skills|length }} skills{% if profile.synthetic %} <span class="pill warn">SYNTHETIC TEST DATA</span>{% endif %}</p>
+<ul>{% for e in profile.experience %}<li>{{ e.title }} at {{ e.employer }} ({{ e.start }} to {{ e.end or 'present' }}, {{ e.bullets|length }} bullets)</li>{% endfor %}</ul>{% endif %}
+</section>
+
+{% if profile %}
+<form method="post" action="/setup/details">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<section><h3>2. Your details</h3>
+{% if todo %}<p class="warn">Still blank: {{ todo|join(', ') }}</p>{% endif %}
+<table><tbody>
+{% for r in rows %}<tr><td><label for="{{ r.key }}">{{ r.prompt }}</label></td>
+<td><input id="{{ r.key }}" name="{{ r.key }}" value="{{ r.value }}" style="width:100%;min-width:260px"></td></tr>{% endfor %}
+</tbody></table>
+<p class="muted">Countries: two-letter codes, e.g. <code>IN=citizen</code> and <code>IN=no, US=yes</code>. Lists: comma separated. Yes/no fields: yes or no.</p>
+</section>
+
+<section><h3>3. Skill levels</h3>
+<p class="muted">Your honest level for each skill. Scoring and the resume summary use it.</p>
+<table><tbody>{% for s in profile.skills %}<tr><td>{{ s.name }}</td><td><select name="skill:{{ s.name }}">
+{% for l in levels %}<option {% if l == s.proficiency %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></td></tr>{% endfor %}</tbody></table>
+</section>
+
+<section><h3>4. Job boards to watch</h3>
+<p class="muted">One careers URL per line, optionally "Employer | URL". Greenhouse, Lever, Ashby and Workday board URLs, careers pages that publish JobPosting data, and RSS/JSON feeds. LinkedIn and Indeed cannot be automated.</p>
+<textarea name="boards" rows="6" style="width:100%">{{ boards }}</textarea>
+{% if kept_sources %}<p class="muted">Also kept unchanged: {% for c in kept_sources %}{{ c.type }} {% endfor %}</p>{% endif %}
+<p>Mode: <select name="mode"><option value="">keep current</option><option value="discovery">discovery (find and score only)</option><option value="review">review (submit only what I approve)</option></select>
+<span class="muted">Auto-apply is turned on only with <code>jobagent consent grant</code>.</span></p>
+<button>Save details and boards</button>
+</section>
+</form>
+
+<section><h3>5. Check the parsed profile</h3>
+<p class="muted">Resume parsing is heuristic. Fix titles, employers, dates and bullets here. Mark extra true achievements that are not on your resume with <code>on_master_resume: false</code>.</p>
+<form method="post" action="/setup/profile">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<textarea name="profile_yaml" rows="30" style="width:100%;font-family:ui-monospace,monospace;font-size:12px">{{ profile_yaml }}</textarea>
+<button>Save profile</button>
+</form>
+</section>
+{% endif %}
+{% endblock %}

@@ -23,7 +23,7 @@ build-backend = "setuptools.build_meta"
 include = ["jobagent*", "testportal*"]
 
 [tool.setuptools.package-data]
-jobagent = ["web/templates/*.html"]
+jobagent = ["web/templates/*.html", "my_details_template.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

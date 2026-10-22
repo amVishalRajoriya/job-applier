@@ -105,7 +105,7 @@ def _score_and_prepare(db, settings, profile, job, reqs, master_id, master, llm,
     out_dir = settings.documents_dir / f"job_{jid}"
     count = db.one("SELECT COUNT(*) n FROM resume_versions WHERE job_id=?", (jid,))["n"]
     stem = f"resume_job{jid}_v{count + 1}"
-    files = write_version(res.doc, out_dir, stem)
+    files = write_version(res.doc, out_dir, stem, pdf=settings.pdf_output)
     letter, letter_src = None, "template"
     if llm is not None:
         letter, problems = draft_cover_letter(llm, profile, res.doc, dict(job), reqs)
