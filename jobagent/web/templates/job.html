@@ -5,6 +5,8 @@
 <p><span class="pill">{{ job.status }}</span> {{ job.location or '' }} {{ job.remote_policy or '' }} ·
 <a href="{{ job.application_url }}" rel="noreferrer noopener" target="_blank">application URL</a>
 {% for f in flags %}<span class="pill warn">{{ f }}</span>{% endfor %}</p>
+{% if err %}<section class="bad">{{ err }}</section>{% endif %}
+{% include "_task.html" %}
 {% if app and app.blocker %}<section><b class="warn">Needs you:</b> {{ app.blocker }}</section>{% endif %}
 
 <section><h3>Screening</h3>
@@ -56,11 +58,32 @@
 <button>Save answer</button></form></td></tr>
 {% endif %}
 {% endfor %}</tbody></table>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+{% if can_dry_run and job.status not in ('SUBMITTED','SUBMISSION_UNVERIFIED','CLOSED') %}
+<form method="post" action="/jobs/{{ job.id }}/dry-run"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<button title="Opens the real form, fills it, screenshots it. Never submits.">Dry run (never submits)</button>
+<label class="muted"><input type="checkbox" name="show" value="1"> show the browser</label></form>{% endif %}
 {% if job.status == 'READY_FOR_REVIEW' %}
-<form method="post" action="/jobs/{{ job.id }}/approve" style="margin-top:10px"><input type="hidden" name="csrf_token" value="{{ csrf }}">
-<button>Approve documents and answers for submission</button></form>{% endif %}
+<form method="post" action="/jobs/{{ job.id }}/approve"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<button>Approve documents and answers</button></form>{% endif %}
+{% if job.status == 'APPROVED' %}
+<form method="post" action="/jobs/{{ job.id }}/submit" onsubmit="return confirm('Submit this application now? This sends it to the employer.')">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<button {% if mode != 'review' %}disabled title="switch to review mode on the Run page"{% endif %}>Submit this application</button></form>
+{% if mode != 'review' %}<span class="muted">Switch to review mode on the <a href="/run">Run page</a> to submit.</span>{% endif %}{% endif %}
+</div>
 {% if app.submitted_at %}<p>Submitted {{ app.submitted_at }} · verified: {{ 'yes' if app.verified else 'no' }} · reference {{ app.reference or '–' }}
 {% if verification.note %}· {{ verification.note }}{% endif %}</p>{% endif %}
+</section>
+{% endif %}
+
+{% if dry %}
+<section><h3>Last dry run ({{ dry.at }}): <span class="{{ 'ok' if dry.outcome == 'ready_to_submit' else 'warn' }}">{{ dry.outcome }}</span></h3>
+<p>{{ dry.detail }}. Nothing was submitted; {{ dry.blocked_requests|length }} requests that could send data were blocked.</p>
+{% if dry.open_questions %}<p class="warn">Open questions: {% for q in dry.open_questions %}{{ q.question }}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+<table><thead><tr><th>Field</th><th>What happened</th><th>Value</th></tr></thead><tbody>
+{% for f in dry.fields %}<tr><td>{{ f.field }}</td><td class="{{ 'ok' if f.action in ('filled','uploaded') else 'warn' }}">{{ f.action }}</td><td>{{ f.value }}</td></tr>{% endfor %}</tbody></table>
+{% if dry.evidence.screenshot %}<details><summary>Screenshot of the filled form</summary><img src="/jobs/{{ job.id }}/dry-run.png" alt="Filled application form" style="max-width:100%;border:1px solid var(--line)"></details>{% endif %}
 </section>
 {% endif %}
 

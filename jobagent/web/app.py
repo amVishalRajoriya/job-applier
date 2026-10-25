@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import secrets
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
@@ -13,6 +14,7 @@ from .. import onboarding, pipeline, report
 from .. import profile as P
 from ..config import Settings
 from ..db import STATUSES, Database, loads
+from .tasks import ACTIONS, Runner
 
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 MANUAL_STATUSES = ["INTERVIEW", "OFFER", "REJECTED", "CLOSED"]
@@ -23,6 +25,9 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
     token = os.environ.get("JOBAGENT_DASHBOARD_TOKEN")
     csrf = secrets.token_urlsafe(16)
     app = FastAPI(title="Job applications")
+    runner = Runner(settings)
+    app.state.runner = runner
+    config_path = settings.home / "config.yaml"
 
     @app.middleware("http")
     async def auth(request: Request, call_next):
@@ -46,10 +51,10 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         data = report.rows(db, status or None, q or None)
         return TEMPLATES.TemplateResponse(request, "index.html", {
             "rows": data, "summary": report.summary(db), "statuses": STATUSES, "status": status or "", "q": q or "",
-            "mode": settings.mode})
+            "mode": settings.mode, "has_profile": db.one("SELECT 1 FROM profile WHERE id=1") is not None})
 
     @app.get("/jobs/{job_id}", response_class=HTMLResponse)
-    def job_detail(request: Request, job_id: int):
+    def job_detail(request: Request, job_id: int, task: int | None = None, err: str = ""):
         job = db.job(job_id)
         if job is None:
             raise HTTPException(404)
@@ -70,7 +75,95 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
             "resume_text": render_text(ResumeDoc.from_dict(loads(rv["content"]))) if rv else "",
             "answers": loads(app_row["answers"], {}) if app_row else {}, "versions": versions, "audit": audit,
             "sources": sources, "verification": loads(app_row["verification"], {}) if app_row else {},
-            "manual_statuses": MANUAL_STATUSES, "csrf": csrf, "flags": loads(job["flags"], [])})
+            "manual_statuses": MANUAL_STATUSES, "csrf": csrf, "flags": loads(job["flags"], []),
+            "dry": latest_dry_run(job_id), "mode": settings.mode, "err": err,
+            "task": runner.tasks.get(task) if task else None,
+            "can_dry_run": bool(app_row and app_row["resume_version_id"])})
+
+    def latest_dry_run(job_id: int) -> dict | None:
+        row = db.one("SELECT detail FROM audit_log WHERE action='dry_run' AND entity='job' AND entity_id=? "
+                     "ORDER BY id DESC LIMIT 1", (job_id,))
+        if not row:
+            return None
+        path = Path(loads(row["detail"], {}).get("report", "")).with_name("report.json")
+        if not path.exists():
+            return None
+        import json
+        return json.loads(path.read_text())
+
+    @app.get("/jobs/{job_id}/dry-run.png")
+    def dry_run_screenshot(job_id: int):
+        rep = latest_dry_run(job_id)
+        shot = Path((rep or {}).get("evidence", {}).get("screenshot") or "")
+        if not shot.is_file() or not shot.resolve().is_relative_to(settings.documents_dir.resolve()):
+            raise HTTPException(404)
+        return Response(shot.read_bytes(), media_type="image/png")
+
+    def start(kind: str, job_id: int | None = None, **opts):
+        try:
+            return runner.start(kind, job_id, **opts), None
+        except RuntimeError as e:
+            return None, str(e)
+
+    @app.post("/jobs/{job_id}/dry-run")
+    def job_dry_run(job_id: int, csrf_token: str = Form(""), show: str = Form("")):
+        check_csrf(csrf_token)
+        t, err = start("dry_run", job_id, show=bool(show))
+        return RedirectResponse(f"/jobs/{job_id}?" + (f"task={t.id}" if t else f"err={quote(err)}"), status_code=303)
+
+    @app.post("/jobs/{job_id}/submit")
+    def job_submit(job_id: int, csrf_token: str = Form("")):
+        check_csrf(csrf_token)
+        if settings.mode != "review":
+            raise HTTPException(400, "switch to review mode on the Run page to submit applications you approved")
+        if db.job(job_id)["status"] != "APPROVED":
+            raise HTTPException(400, "approve this application first")
+        t, err = start("apply", job_id)
+        return RedirectResponse(f"/jobs/{job_id}?" + (f"task={t.id}" if t else f"err={quote(err)}"), status_code=303)
+
+    # ---- running the agent -------------------------------------------------------------------
+    @app.get("/run", response_class=HTMLResponse)
+    def run_page(request: Request, task: int | None = None, err: str = "", msg: str = ""):
+        try:
+            prof = P.load(db)
+        except LookupError:
+            prof = None
+        enc = db.one("SELECT encrypted FROM profile WHERE id=1")
+        counts = report.summary(db)
+        return TEMPLATES.TemplateResponse(request, "run.html", {
+            "csrf": csrf, "mode": settings.mode, "err": err, "msg": msg, "profile": prof,
+            "encrypted": bool(enc and enc["encrypted"]), "todo": onboarding.unanswered(prof) if prof else [],
+            "sources": settings.sources, "summary": counts,
+            "approved": db.one("SELECT COUNT(*) n FROM jobs WHERE status='APPROVED'")["n"],
+            "task": runner.tasks.get(task) if task else runner.busy(), "recent": runner.recent(),
+            "llm": settings.llm_enabled})
+
+    @app.post("/run/{kind}")
+    def run_action(kind: str, csrf_token: str = Form("")):
+        check_csrf(csrf_token)
+        if kind not in ACTIONS or kind == "dry_run":
+            raise HTTPException(404)
+        t, err = start(kind)
+        return RedirectResponse("/run?" + (f"task={t.id}" if t else f"err={quote(err)}"), status_code=303)
+
+    @app.get("/tasks/{task_id}")
+    def task_status(task_id: int):
+        t = runner.tasks.get(task_id)
+        if not t:
+            raise HTTPException(404)
+        d = t.to_dict()
+        d.pop("result", None)
+        return d
+
+    @app.post("/settings/mode")
+    def set_mode(mode: str = Form(...), csrf_token: str = Form("")):
+        check_csrf(csrf_token)
+        if mode not in ("discovery", "review"):
+            raise HTTPException(400, "auto-apply is turned on only with `jobagent consent grant` and config.yaml")
+        onboarding.update_config(config_path, mode=mode)
+        settings.mode = mode
+        db.audit("candidate (dashboard)", "mode_changed", None, None, mode=mode)
+        return RedirectResponse("/run?msg=" + quote(f"mode set to {mode}"), status_code=303)
 
     @app.post("/jobs/{job_id}/answer")
     def set_answer(job_id: int, question: str = Form(...), value: str = Form(...), csrf_token: str = Form("")):
@@ -123,7 +216,6 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
                         headers={"Content-Disposition": f"attachment; filename=applications.{fmt}"})
 
     # ---- first-run setup ------------------------------------------------------------------------
-    config_path = settings.home / "config.yaml"
 
     def current_sources() -> list[dict]:
         import yaml
@@ -204,6 +296,7 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
             onboarding.update_config(config_path, sources=kept + sources, mode=mode)
         except ValueError as e:
             return back(err=str(e))
+        settings.sources = kept + sources
         if mode:
             settings.mode = mode
         return back(msg="saved" + (f"; skipped: {'; '.join(problems)}" if problems else ""))

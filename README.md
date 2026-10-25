@@ -20,7 +20,7 @@ cp .env.example .env                     # fill in, never commit
 python -m jobagent.cli keygen            # paste the output into JOBAGENT_ENCRYPTION_KEY in .env
 set -a; . ./.env; set +a
 python -m jobagent.cli init              # creates $JOBAGENT_HOME/config.yaml and the database
-python -m pytest                         # 57 tests, about 2 minutes
+python -m pytest                         # 59 tests, about 2 minutes
 ```
 
 `pip install -e .` also installs a `jobagent` command; the examples below use `python -m jobagent.cli`.
@@ -30,6 +30,32 @@ python -m pytest                         # 57 tests, about 2 minutes
 See [.env.example](.env.example). Secrets live only in the environment: the encryption key, the optional
 `ANTHROPIC_API_KEY` and the optional dashboard token. No passwords are stored anywhere; the agent never
 logs in to job sites.
+
+## Quick start: the browser front end
+
+Everything can be done from the dashboard, with no commands after the first one:
+
+- macOS or Linux: `./start.sh`
+- Windows: double-click `start.bat` (written for Windows but not yet run on it)
+
+On the first run the script creates a virtual environment and installs the dependencies and Chromium. It also
+writes `.env` with a new encryption key; back that file up, because the saved profile cannot be read without
+the key. It then opens http://127.0.0.1:8000 in your browser. The dashboard listens only on your own computer.
+
+1. **Setup** page: upload your resume, fill in your details and skill levels, paste the job board URLs, and
+   correct anything the parser misread.
+2. **Run** page: a checklist shows what is still missing. Then:
+   - **Check boards** fetches each board once and stores nothing;
+   - **Find jobs** discovers, screens, scores and prepares documents;
+   - the live log shows progress, and one run happens at a time.
+3. **Jobs** page: open a job to see the score breakdown, resume changes, cover letter and form answers.
+   Answer any open questions, then press **Dry run (never submits)**. It fills the real form and shows each
+   field plus a screenshot; tick "show the browser" to watch it. Then press **Approve**.
+4. Switch the mode to **review** on the Run page. Submit one job from its page, or all approved jobs from the
+   Run page. A job counts as submitted only when the employer's confirmation page shows a reference.
+
+Auto-apply cannot be turned on from the browser; it needs `jobagent consent grant`.
+Screenshots (synthetic data): [Run](docs/ui/ui_run.png), [Job and dry run](docs/ui/ui_job.png), [Setup](docs/ui/ui_setup.png).
 
 ## First-run setup
 

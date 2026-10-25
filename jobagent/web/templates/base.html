@@ -14,8 +14,8 @@ th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertic
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}pre{white-space:pre-wrap;background:var(--card);border:1px solid var(--line);padding:10px;border-radius:6px}
 section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px}
 input,select,textarea,button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
-button{cursor:pointer;background:var(--accent);color:#fff;border:none}.scroll{overflow-x:auto}
+button{cursor:pointer;background:var(--accent);color:#fff;border:none}button:disabled{opacity:.45;cursor:not-allowed}.scroll{overflow-x:auto}
 </style></head><body>
-<header><a href="/">Job applications</a><a href="/setup" class="muted">Setup</a><a href="/audit" class="muted">Audit log</a>
+<header><a href="/">Jobs</a><a href="/setup">Setup</a><a href="/run">Run</a><a href="/audit" class="muted">Audit log</a>
 <span class="muted">Export: <a href="/export.csv">CSV</a> · <a href="/export.json">JSON</a> · <a href="/export.html">HTML</a></span></header>
 <main>{% block body %}{% endblock %}</main></body></html>

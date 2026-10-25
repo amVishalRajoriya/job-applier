@@ -1,0 +1,24 @@
+{% if task %}
+<section id="task" data-id="{{ task.id }}" data-status="{{ task.status }}">
+<h3>{{ task.label }}: <span id="task-status" class="{{ 'ok' if task.status == 'done' else 'bad' if task.status == 'failed' else 'warn' }}">{{ task.status }}</span></h3>
+<pre id="task-log" style="max-height:340px;overflow:auto">{{ task.log|join('\n') }}</pre>
+</section>
+<script>
+(function(){
+  const box = document.getElementById('task'); if (!box) return;
+  const id = box.dataset.id, st = document.getElementById('task-status'), log = document.getElementById('task-log');
+  if (!['queued','running'].includes(box.dataset.status)) return;
+  const tick = async () => {
+    try {
+      const r = await fetch('/tasks/' + id); if (!r.ok) return;
+      const t = await r.json();
+      log.textContent = t.log.join('\n'); log.scrollTop = log.scrollHeight;
+      st.textContent = t.status; st.className = t.status === 'done' ? 'ok' : t.status === 'failed' ? 'bad' : 'warn';
+      if (t.status === 'done' || t.status === 'failed') { location.replace(location.pathname + '?task=' + id); return; }
+    } catch (e) {}
+    setTimeout(tick, 1500);
+  };
+  setTimeout(tick, 800);
+})();
+</script>
+{% endif %}

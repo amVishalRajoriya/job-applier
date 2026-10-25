@@ -209,6 +209,30 @@ def retry_failed(db: Database, settings: Settings, profile: Profile) -> list[dic
     return [{"job_id": r["id"], **engine.submit(db, settings, profile, r["id"], actor="retry")} for r in rows]
 
 
+def source_label(cfg: dict) -> str:
+    key = cfg.get("board_token") or cfg.get("site") or cfg.get("organization") or cfg.get("tenant") \
+        or cfg.get("url") or ", ".join(cfg.get("urls", [])) or cfg.get("path")
+    return f"{cfg['type']}:{key}" + (f" ({cfg['employer']})" if cfg.get("employer") else "")
+
+
+def check_sources(settings: Settings) -> list[dict]:
+    """Fetch every configured source once, without storing anything. One result per source."""
+    http = PoliteClient(settings.user_agent, settings.http_timeout, settings.http_retries, settings.per_host_min_interval)
+    out = []
+    try:
+        for cfg, src in zip(settings.sources, build_sources(settings.sources, http)):
+            try:
+                jobs = list(src.fetch())
+                out.append({"source": source_label(cfg), "ok": True, "jobs": len(jobs),
+                            "sample": [{"title": j.title, "location": j.location, "url": j.application_url}
+                                       for j in jobs[:3]]})
+            except Exception as e:
+                out.append({"source": source_label(cfg), "ok": False, "error": f"{type(e).__name__}: {str(e)[:300]}"})
+    finally:
+        http.close()
+    return out
+
+
 def capability_report() -> list[dict]:
     from .sources.base import CAPABILITIES
     return [{"key": k, **c.__dict__} for k, c in CAPABILITIES.items()]

@@ -223,3 +223,84 @@ def test_second_resume_layout():
     assert len(prof.experience[0].bullets) == 2 and prof.education[0].level == "master"
     assert {"Airflow", "Snowflake", "Tableau"} <= {s.name for s in prof.skills}
     assert prof.contact.email == "ravi.exampleperson@example.com"
+
+
+# ---- front end: run the agent from the dashboard ---------------------------------------------------
+
+def _wait(client, task_id, timeout=120):
+    import time
+    end = time.time() + timeout
+    while time.time() < end:
+        t = client.get(f"/tasks/{task_id}").json()
+        if t["status"] in ("done", "failed"):
+            return t
+        time.sleep(0.3)
+    raise AssertionError("task did not finish")
+
+
+def _task_id(resp):
+    loc = resp.headers["location"]
+    assert "task=" in loc, loc
+    return int(loc.split("task=")[1])
+
+
+def test_dashboard_runs_the_whole_flow(env, reset_portal):
+    from .conftest import sources as portal_sources
+    s, db, prof = env
+    s.sources = portal_sources(reset_portal.base_url, "1001")[:1]
+    client = TestClient(create_app(s, db))
+    page = client.get("/run")
+    assert page.status_code == 200 and "Before you start" in page.text
+    csrf = page.text.split('name="csrf_token" value="')[1].split('"')[0]
+    assert client.post("/run/find", data={"csrf_token": "bad"}).status_code == 403
+
+    t = _wait(client, _task_id(client.post("/run/check_sources", data={"csrf_token": csrf}, follow_redirects=False)))
+    assert t["status"] == "done" and any("OK" in line for line in t["log"])
+    assert db.one("SELECT COUNT(*) n FROM jobs")["n"] == 0  # checking stores nothing
+
+    t = _wait(client, _task_id(client.post("/run/find", data={"csrf_token": csrf}, follow_redirects=False)))
+    assert t["status"] == "done", t["log"]
+    jid = job_id_by_employer(db, "Paymint")
+    assert db.job(jid)["status"] == "READY_FOR_REVIEW"
+
+    # dry run from the job page: fills the real form, never submits
+    r = client.post(f"/jobs/{jid}/dry-run", data={"csrf_token": csrf}, follow_redirects=False)
+    t = _wait(client, _task_id(r))
+    assert t["status"] == "done" and any("Nothing was submitted" in line for line in t["log"])
+    job_page = client.get(f"/jobs/{jid}")
+    assert "Last dry run" in job_page.text and "ready_to_submit" in job_page.text
+    assert client.get(f"/jobs/{jid}/dry-run.png").headers["content-type"] == "image/png"
+    assert submissions(reset_portal) == []
+
+    # approve, then submit only after switching to review mode
+    client.post(f"/jobs/{jid}/approve", data={"csrf_token": csrf})
+    assert client.post(f"/jobs/{jid}/submit", data={"csrf_token": csrf}).status_code == 400  # discovery mode
+    assert client.post("/settings/mode", data={"mode": "auto", "csrf_token": csrf}).status_code == 400
+    client.post("/settings/mode", data={"mode": "review", "csrf_token": csrf})
+    assert s.mode == "review"
+    t = _wait(client, _task_id(client.post(f"/jobs/{jid}/submit", data={"csrf_token": csrf}, follow_redirects=False)))
+    assert any("submitted, reference TP-" in line for line in t["log"]), t["log"]
+    assert db.job(jid)["status"] == "SUBMITTED" and len(submissions(reset_portal)) == 1
+    assert "Recent runs" in client.get("/run").text
+
+
+def test_one_run_at_a_time(env):
+    import threading
+    from jobagent.web import tasks
+    s, db, prof = env
+    gate = threading.Event()
+    tasks.ACTIONS["_wait"] = (lambda t, db, s: gate.wait(10), "Waiting")
+    try:
+        runner = tasks.Runner(s)
+        first = runner.start("_wait")
+        with pytest.raises(RuntimeError):
+            runner.start("_wait")
+        gate.set()
+        for _ in range(50):
+            if first.status == "done":
+                break
+            import time
+            time.sleep(0.05)
+        assert first.status == "done"
+    finally:
+        tasks.ACTIONS.pop("_wait")

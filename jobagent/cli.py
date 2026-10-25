@@ -139,27 +139,17 @@ def cmd_setup(args):
 
 def cmd_check_sources(args):
     """Fetch every configured source once and report, without storing anything."""
-    from .http import PoliteClient
-    from .sources.registry import build_sources
     s = load_settings(args.home)
     if not s.sources:
         sys.exit("no sources in config.yaml yet: run `jobagent setup` with your board URLs")
-    http = PoliteClient(s.user_agent, s.http_timeout, s.http_retries, s.per_host_min_interval)
-    ok = 0
-    try:
-        for cfg, src in zip(s.sources, build_sources(s.sources, http)):
-            label = f"{cfg['type']}:{cfg.get('board_token') or cfg.get('site') or cfg.get('organization') or cfg.get('tenant') or cfg.get('url') or cfg.get('urls')}"
-            try:
-                jobs = list(src.fetch())
-            except Exception as e:
-                print(f"FAIL {label}: {type(e).__name__}: {str(e)[:200]}")
-                continue
-            ok += 1
-            print(f"OK   {label}: {len(jobs)} jobs" + "".join(f"\n       {j.title} | {j.location or '?'} | {j.application_url}"
-                                                        for j in jobs[:3]))
-    finally:
-        http.close()
-    print(f"{ok}/{len(s.sources)} sources fetched. Nothing was stored.")
+    results = pipeline.check_sources(s)
+    for r in results:
+        if r["ok"]:
+            print(f"OK   {r['source']}: {r['jobs']} jobs" + "".join(
+                f"\n       {j['title']} | {j['location'] or '?'} | {j['url']}" for j in r["sample"]))
+        else:
+            print(f"FAIL {r['source']}: {r['error']}")
+    print(f"{sum(r['ok'] for r in results)}/{len(results)} sources fetched. Nothing was stored.")
 
 
 def cmd_llm_check(args):
@@ -371,7 +361,13 @@ def cmd_dashboard(args):
     import uvicorn
     from .web.app import create_app
     s, db = _ctx(args)
-    uvicorn.run(create_app(s, db), host=args.host, port=args.port)
+    url = f"http://{args.host}:{args.port}/" + ("run" if db.one("SELECT 1 FROM profile WHERE id=1") else "setup")
+    print(f"dashboard: {url}  (Ctrl+C to stop)")
+    if args.open:
+        import threading
+        import webbrowser
+        threading.Timer(1.5, webbrowser.open, (url,)).start()
+    uvicorn.run(create_app(s, db), host=args.host, port=args.port, log_level="warning")
 
 
 def main(argv=None):
@@ -454,6 +450,7 @@ def main(argv=None):
     x = sub.add_parser("dashboard", help="run the local dashboard")
     x.add_argument("--host", default="127.0.0.1")
     x.add_argument("--port", type=int, default=8000)
+    x.add_argument("--open", action="store_true", help="open it in your browser")
     x.set_defaults(fn=cmd_dashboard)
     args = ap.parse_args(argv)
     try:

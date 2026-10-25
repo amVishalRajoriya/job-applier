@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block body %}
+{% if not has_profile %}<section><b>Welcome.</b> Start on the <a href="/setup">Setup page</a>: upload your resume, fill in your details and add the job boards to watch. Then go to <a href="/run">Run</a>.</section>{% endif %}
 <div class="tiles">
   <div class="tile"><span class="muted">Jobs discovered</span><b>{{ summary.jobs_discovered }}</b></div>
   <div class="tile"><span class="muted">Meet criteria</span><b>{{ summary.meets_criteria }}</b></div>
@@ -34,6 +35,6 @@
   <td>{{ r.follow_up_date or '' }}</td><td>{{ r.recruiter_response or '' }}</td>
   <td class="muted">{{ (r.error or '')[:100] }}{% if r.retry_status %} ({{ r.retry_status }}){% endif %}</td>
 </tr>
-{% else %}<tr><td colspan="12" class="muted">No jobs yet. Run <code>jobagent discover</code> and <code>jobagent process</code>.</td></tr>{% endfor %}
+{% else %}<tr><td colspan="12" class="muted">No jobs yet. Go to <a href="/run">Run</a> and press Find jobs.</td></tr>{% endfor %}
 </tbody></table></div>
 {% endblock %}

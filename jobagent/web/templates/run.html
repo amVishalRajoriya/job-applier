@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Run the agent{% endblock %}
+{% block body %}
+<h2>Run the agent</h2>
+{% if msg %}<section class="ok">{{ msg }}</section>{% endif %}
+{% if err %}<section class="bad">{{ err }}</section>{% endif %}
+
+<section><h3>Before you start</h3>
+<table><tbody>
+<tr><td>{% if profile %}<span class="ok">✓</span>{% else %}<span class="bad">✗</span>{% endif %} Resume and profile</td>
+<td>{% if profile %}{{ profile.contact.name }}, {{ profile.experience|length }} roles{% if profile.synthetic %} <span class="pill warn">SYNTHETIC TEST DATA</span>{% endif %}{% else %}<a href="/setup">Upload your resume</a>{% endif %}</td></tr>
+<tr><td>{% if profile and not todo %}<span class="ok">✓</span>{% else %}<span class="warn">!</span>{% endif %} Your details</td>
+<td>{% if todo %}Still blank: {{ todo|join(', ') }}. <a href="/setup">Fill them in</a> (applications needing them will pause).{% elif profile %}complete{% else %}–{% endif %}</td></tr>
+<tr><td>{% if encrypted %}<span class="ok">✓</span>{% else %}<span class="bad">✗</span>{% endif %} Profile encrypted</td>
+<td>{% if encrypted %}yes{% else %}no: set JOBAGENT_ENCRYPTION_KEY (the start script does this) and save your profile again{% endif %}</td></tr>
+<tr><td>{% if sources %}<span class="ok">✓</span>{% else %}<span class="bad">✗</span>{% endif %} Job boards</td>
+<td>{% if sources %}{{ sources|length }} configured{% else %}<a href="/setup">Add board URLs</a>{% endif %}</td></tr>
+<tr><td><span class="muted">·</span> Claude model</td><td class="muted">{% if llm %}on (ANTHROPIC_API_KEY set){% else %}off: documents use templates built only from your resume{% endif %}</td></tr>
+</tbody></table>
+</section>
+
+<section><h3>Mode: {{ mode }}</h3>
+<form method="post" action="/settings/mode" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<select name="mode"><option value="discovery" {% if mode == 'discovery' %}selected{% endif %}>discovery: find and score only, never submit</option>
+<option value="review" {% if mode == 'review' %}selected{% endif %}>review: submit only applications I approve</option></select>
+<button>Set mode</button></form>
+<p class="muted">Auto-apply is not available from this page. It needs a typed consent with limits (<code>jobagent consent grant</code>).</p>
+</section>
+
+{% include "_task.html" %}
+
+<section><h3>Steps</h3>
+{% set busy = task and task.status in ('queued','running') %}
+<table><tbody>
+<tr><td><b>1. Check job boards</b><br><span class="muted">Fetches each board once and shows what it finds. Stores nothing.</span></td>
+<td><form method="post" action="/run/check_sources"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button {% if busy or not sources %}disabled{% endif %}>Check boards</button></form></td></tr>
+<tr><td><b>2. Find and prepare jobs</b><br><span class="muted">Discovers new jobs, screens them on your constraints, scores them, tailors a resume version and cover letter, and reads each application form (read-only) to collect its questions.</span></td>
+<td><form method="post" action="/run/find"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button {% if busy or not profile or not sources %}disabled{% endif %}>Find jobs</button></form></td></tr>
+<tr><td><b>3. Review</b><br><span class="muted">On the <a href="/?status=READY_FOR_REVIEW">Jobs page</a>, open a job: check the score, resume changes and answers, answer open questions, run a <b>dry run</b> (fills the real form, never submits) and approve it.</span></td>
+<td><a href="/?status=READY_FOR_REVIEW">{{ summary.by_status.get('READY_FOR_REVIEW', 0) }} ready for review</a></td></tr>
+<tr><td><b>4. Submit approved applications</b><br><span class="muted">Only in review mode, only applications you approved. Each is recorded as submitted only when the confirmation page shows a reference.</span></td>
+<td><form method="post" action="/run/apply"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button {% if busy or mode != 'review' or not approved %}disabled{% endif %}>Submit {{ approved }} approved</button></form>
+{% if mode != 'review' %}<span class="muted">switch to review mode first</span>{% endif %}</td></tr>
+</tbody></table>
+</section>
+
+{% if recent %}<section><h3>Recent runs</h3><table><tbody>
+{% for t in recent %}<tr><td><a href="/run?task={{ t.id }}">{{ t.label }}</a></td><td>{{ t.status }}</td><td class="muted">{{ t.started_at or '' }} – {{ t.finished_at or '' }}</td><td class="muted">{{ (t.log[-1] if t.log else '')[:140] }}</td></tr>{% endfor %}
+</tbody></table></section>{% endif %}
+{% endblock %}
