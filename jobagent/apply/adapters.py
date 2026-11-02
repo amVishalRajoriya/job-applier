@@ -13,6 +13,7 @@ from playwright.sync_api import Error as PWError, Page, TimeoutError as PWTimeou
 
 from ..normalize import norm_employer, norm_title
 from ..security import domain_allowed, host_of
+from ..sources.jobsites import NEVER_AUTOMATE
 from ..text import overlap
 
 
@@ -107,7 +108,8 @@ class GenericFormAdapter:
 
     def __init__(self, page: Page, allowed_domains: list[str], timeout_ms: int = 15000, read_only: bool = False):
         self.page = page
-        self.allowed = allowed_domains
+        # LinkedIn, Indeed and Naukri are never driven by this adapter, whatever the caller passes in
+        self.allowed = [d for d in allowed_domains if not domain_allowed(f"https://{d}/", NEVER_AUTOMATE)]
         self.timeout = timeout_ms
         # read_only (dry run): every request that could send data (any method but GET/HEAD/OPTIONS, from any
         # frame or script) is aborted, and submit() refuses to run.
@@ -137,10 +139,14 @@ class GenericFormAdapter:
     def _check_domain(self) -> None:
         if self.violations:
             raise FatalError(f"blocked navigation to unapproved domain {host_of(self.violations[0])!r}")
+        if self.page.url.startswith(("about:", "chrome-error:")):
+            return  # nothing loaded (e.g. network failure); the caller reports the navigation error
         if not domain_allowed(self.page.url, self.allowed):
             raise FatalError(f"page navigated to unapproved domain {host_of(self.page.url)!r}")
 
     def open(self, url: str) -> None:
+        if domain_allowed(url, NEVER_AUTOMATE):
+            raise FatalError(f"{host_of(url)} is never automated: apply there yourself (jobagent assist)")
         if not domain_allowed(url, self.allowed):
             raise FatalError(f"application URL host {host_of(url)!r} is not an approved domain")
         try:

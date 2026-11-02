@@ -1,0 +1,35 @@
+From: LinkedIn Job Alerts <jobalerts-noreply@linkedin.com>
+To: asha.testcandidate@example.com
+Subject: "backend engineer": Paymint (synthetic) - Backend Engineer and more
+Date: Thu, 29 Oct 2026 07:30:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+
+Your job alert for backend engineer
+Backend Engineer
+Paymint (synthetic) · Bengaluru, Karnataka, India
+View job: https://www.linkedin.com/comm/jobs/view/4012345678/?trackingId=abc
+
+--b1
+Content-Type: text/html; charset=utf-8
+
+<html><body><table>
+<tr><td><h2>Your job alert for backend engineer</h2><p>2 new jobs match your preferences.</p></td></tr>
+<tr><td>
+ <a href="https://www.linkedin.com/comm/jobs/view/4012345678/?trackingId=abc%3D%3D&amp;refId=xyz&amp;lipi=urn"><img src="https://media.licdn.com/logo.png" alt="Paymint (synthetic)"></a>
+ <a href="https://www.linkedin.com/comm/jobs/view/4012345678/?trackingId=abc%3D%3D&amp;refId=xyz">Backend Engineer</a>
+ <p>Paymint (synthetic) · Bengaluru, Karnataka, India</p>
+ <p>Actively recruiting</p><p>Easy Apply</p>
+</td></tr>
+<tr><td>
+ <a href="https://www.linkedin.com/comm/jobs/view/4012345690/?trackingId=def">Platform Engineer (Python)</a>
+ <p>Shopwell (synthetic) · India (Remote)</p>
+ <p>3 connections</p>
+</td></tr>
+<tr><td><a href="https://www.linkedin.com/comm/jobs/search?keywords=backend+engineer">See all jobs</a>
+<a href="https://www.linkedin.com/comm/psettings/email-unsubscribe?lipi=x">Unsubscribe</a></td></tr>
+</table></body></html>
+--b1--

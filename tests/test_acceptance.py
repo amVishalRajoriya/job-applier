@@ -69,7 +69,7 @@ def test_02b_robots_and_source_isolation(env, reset_portal):
     out = pipeline.run_discovery(db, s, bad)
     assert len(out["errors"]) == 1 and "robots.txt" in out["errors"][0]["error"]
     assert out["new_jobs"] == 1  # the broken source did not stop the other one
-    with pytest.raises(ValueError, match="cannot be automated"):
+    with pytest.raises(ValueError, match="not fetched directly"):
         pipeline.run_discovery(db, s, [{"type": "linkedin"}])
 
 

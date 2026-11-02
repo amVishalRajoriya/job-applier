@@ -70,13 +70,25 @@ def jobposting_to_record(jp: dict, source: str, page_url: str, employer_hint: st
         source=source, source_id=f"{employer}:{sid}", title=(jp.get("title") or "").strip(), employer=employer,
         description=desc, location=_place(jp.get("jobLocation")) or ("Remote" if remote == "remote" else None),
         remote_policy=remote, required_qualifications=[html_to_text(q) for q in required],
-        experience_requirement=html_to_text(str(jp.get("experienceRequirements"))) if jp.get("experienceRequirements") else None,
+        experience_requirement=_experience(jp.get("experienceRequirements")),
         employment_type=normalize_employment_type(emp), date_posted=(jp.get("datePosted") or "")[:10] or None,
         closing_date=(jp.get("validThrough") or "")[:10] or None, original_url=url,
         application_url=jp.get("applicationUrl") or url,
         salary_min=smin, salary_max=smax, salary_currency=cur, salary_interval=interval,
         raw={"page": page_url},
     )
+
+
+def _experience(v: Any) -> str | None:
+    if not v:
+        return None
+    if isinstance(v, dict):
+        months = v.get("monthsOfExperience")
+        try:
+            return f"{int(float(months)) // 12}+ years" if months else (html_to_text(v.get("description")) or None)
+        except (TypeError, ValueError):
+            return None
+    return html_to_text(str(v))
 
 
 class CareerPageSource(Source):

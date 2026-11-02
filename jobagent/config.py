@@ -63,6 +63,19 @@ class Settings:
     def browser_dir(self) -> Path:
         return self.home / "browser"
 
+    # LinkedIn / Indeed / Naukri inputs (defaults; config.yaml sources may point elsewhere)
+    @property
+    def saved_pages_dir(self) -> Path:
+        return self.home / "saved_pages"
+
+    @property
+    def alerts_dir(self) -> Path:
+        return self.home / "job_alerts"
+
+    @property
+    def urls_file(self) -> Path:
+        return self.home / "job_urls.txt"
+
     def ensure_dirs(self) -> None:
         for d in (self.home, self.documents_dir, self.browser_dir):
             d.mkdir(parents=True, exist_ok=True)

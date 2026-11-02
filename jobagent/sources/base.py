@@ -43,7 +43,7 @@ class Capability:
     discovery: str          # how jobs are found
     access: str             # official API / public feed / manual
     apply: str              # how applications are completed
-    apply_status: str       # tested_local | untested_live | manual_only | unsupported
+    apply_status: str       # tested_local | untested_live | manual_only | assisted | unsupported
     domains: tuple[str, ...]  # legitimate application destinations
     notes: str = ""
 
@@ -77,15 +77,35 @@ CAPABILITIES: dict[str, Capability] = {
         "RSS / JSON job feeds", "RSS 2.0 or JSON feeds published by boards and employers",
         "public feeds", "manual unless the URL is a supported ATS", "manual_only", ()),
     "manual": Capability(
-        "Manual import (LinkedIn, Indeed, referrals)", "candidate pastes URL + description, or imports a YAML/JSON file",
+        "Manual import (referrals, any site)", "candidate pastes URL + description, or imports a YAML/JSON file",
         "candidate-provided", "manual unless the URL is a supported ATS", "manual_only", ()),
+    "job_alerts": Capability(
+        "Job-alert emails (LinkedIn, Indeed, Naukri)", "parses the alert emails these sites already send you: "
+        "saved .eml/.mbox files, or read-only IMAP on your own mailbox. Nothing is requested from the job sites",
+        "candidate's own email", "assisted: you submit on the site yourself", "assisted", (),
+        "untested_live: parsers built from SYNTHETIC fixtures. Alerts only carry a summary; save the job page for "
+        "the full description."),
+    "saved_pages": Capability(
+        "Saved job pages and pasted URLs (LinkedIn, Indeed, Naukri)", "reads job pages you saved from your own "
+        "browser (.html/.mhtml); pasted URLs wait until their page is saved (by hand or with `jobagent capture`)",
+        "candidate's own browser", "assisted: you submit on the site yourself", "assisted", (),
+        "untested_live: parsers built from SYNTHETIC fixtures. If a listing links straight to a Greenhouse or "
+        "Lever form, that form is used instead (review mode)."),
     "linkedin": Capability(
-        "LinkedIn Jobs", "not automated: LinkedIn's User Agreement prohibits scraping and automated activity; "
-        "no public job-search API for individuals", "manual import only", "manual only (Easy Apply is never automated)",
-        "unsupported", ("linkedin.com",)),
+        "LinkedIn Jobs", "never scraped: LinkedIn's User Agreement prohibits scraping and automated activity and it "
+        "restricts accounts it detects. Use job_alerts or saved_pages", "your alert emails and saved pages only",
+        "assisted: the agent prepares documents and answers and opens the job in your own browser; you submit "
+        "(Easy Apply is never automated)", "assisted", ("linkedin.com",)),
     "indeed": Capability(
-        "Indeed", "not automated: Indeed retired its public job-search API and its terms prohibit scraping",
-        "manual import only", "manual only", "unsupported", ("indeed.com",)),
+        "Indeed", "never scraped: Indeed's terms prohibit scraping, it has no public job-search API for "
+        "individuals, and it uses CAPTCHAs and bot checks. Use job_alerts or saved_pages",
+        "your alert emails and saved pages only", "assisted: you submit on Indeed yourself", "assisted",
+        ("indeed.com",)),
+    "naukri": Capability(
+        "Naukri.com", "never scraped: Naukri's terms prohibit automated access and it has no public job-search API. "
+        "Use job_alerts or saved_pages", "your alert emails and saved pages only",
+        "assisted: you submit on Naukri yourself (it requires your logged-in account)", "assisted",
+        ("naukri.com",)),
     "testportal": Capability(
         "Local test ATS", "Greenhouse/Lever/Ashby/Workday-shaped APIs served locally",
         "local", "generic_form browser adapter", "tested_local", ("127.0.0.1", "localhost"),
@@ -128,8 +148,8 @@ def infer_remote_policy(*texts: str | None) -> str | None:
     return None
 
 
-_EMP_TYPES = {"full-time": r"full[- ]?time|permanent|fulltime",
-              "part-time": r"part[- ]?time", "contract": r"contract|contractor|freelance|temporary|temp\b",
+_EMP_TYPES = {"full-time": r"full[-_ ]?time|permanent|fulltime",
+              "part-time": r"part[-_ ]?time", "contract": r"^\s*contract\s*$|\bcontract(ual)?\s+(role|position|basis|job|to hire|employee)|\bcontractors?\b|freelance|\btemporary\b|\btemp\b|fixed[- ]term",
               "internship": r"intern(ship)?"}
 
 

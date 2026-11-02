@@ -110,6 +110,8 @@ def upsert_job(db: Database, rec: JobRecord) -> tuple[int, bool]:
             updates["description"] = rec.description
         if rec.source in ("greenhouse", "lever", "ashby", "workday", "testportal") and rec.application_url:
             updates["application_url"] = rec.application_url
+        elif rec.raw.get("external_ats") and rec.application_url:  # a job-site listing that links to the employer's ATS
+            updates["application_url"] = rec.application_url
         for f, attr in (("required_qualifications", rec.required_qualifications),
                         ("preferred_qualifications", rec.preferred_qualifications)):
             if attr and not (row[f] and row[f] != "[]"):

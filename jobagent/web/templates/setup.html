@@ -35,7 +35,7 @@
 </section>
 
 <section><h3>4. Job boards to watch</h3>
-<p class="muted">One careers URL per line, optionally "Employer | URL". Greenhouse, Lever, Ashby and Workday board URLs, careers pages that publish JobPosting data, and RSS/JSON feeds. LinkedIn and Indeed cannot be automated.</p>
+<p class="muted">One careers URL per line, optionally "Employer | URL". Greenhouse, Lever, Ashby and Workday board URLs, careers pages that publish JobPosting data, and RSS/JSON feeds. For LinkedIn, Indeed and Naukri.com use section 5 below.</p>
 <textarea name="boards" rows="6" style="width:100%">{{ boards }}</textarea>
 {% if kept_sources %}<p class="muted">Also kept unchanged: {% for c in kept_sources %}{{ c.type }} {% endfor %}</p>{% endif %}
 <p>Mode: <select name="mode"><option value="">keep current</option><option value="discovery">discovery (find and score only)</option><option value="review">review (submit only what I approve)</option></select>
@@ -44,7 +44,33 @@
 </section>
 </form>
 
-<section><h3>5. Check the parsed profile</h3>
+<section id="jobsites"><h3>5. LinkedIn, Indeed and Naukri.com</h3>
+<div class="bad" style="padding:8px 10px;border-radius:6px">
+<b>Read this first.</b> These three sites forbid scraping and automated use in their terms, sit behind logins, and use CAPTCHAs and bot detection. Accounts that look automated get restricted or banned. So the agent never logs in to them, never searches or crawls them, and never fills or submits their forms.
+Instead it reads what you already have: the job-alert emails they send you, and job pages you save from your own browser. Applying stays with you: the agent prepares a kit (tailored resume, cover letter, answers from your profile), you submit on the site, then mark it as submitted.
+These readers were built and tested on <b>synthetic</b> copies of the pages and emails (the sites cannot be reached from where this was built), so treat the first results with care.
+</div>
+<form method="post" action="/setup/jobsites">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<p><b>a. Job-alert emails</b> <span class="muted">(recommended)</span>. Turn on job alerts on each site. Then either save the alert emails as <code>.eml</code> files (or an <code>.mbox</code> export) into this folder:</p>
+<p><input name="alerts_folder" value="{{ jobsites.alerts_folder }}" style="width:100%"></p>
+<p class="muted">or let the agent read your mailbox read-only over IMAP (it only looks at mail from linkedin.com, indeed.com and naukri.com, and never marks, moves or deletes anything). Use an app password, put it in an environment variable, and type that variable's <i>name</i> here, never the password.</p>
+<p style="display:flex;gap:6px;flex-wrap:wrap">
+<input name="imap_host" placeholder="imap.gmail.com" value="{{ jobsites.imap.host or '' }}">
+<input name="imap_user" placeholder="you@gmail.com" value="{{ jobsites.imap.user or '' }}">
+<input name="imap_password_env" placeholder="JOBAGENT_IMAP_PASSWORD" value="{{ jobsites.imap.password_env or '' }}"></p>
+<p><b>b. Saved job pages.</b> Open a job on the site in your own browser (signed in), press Ctrl+S / Cmd+S and save it into this folder. Alert emails only carry a summary, so saving the page gives a full description and a better score.</p>
+<p><input name="pages_folder" value="{{ jobsites.pages_folder }}" style="width:100%"></p>
+<p><b>c. Paste job URLs</b> to keep a to-do list of pages to save, one per line. Nothing is fetched.</p>
+<textarea name="urls" rows="4" style="width:100%" placeholder="https://www.linkedin.com/jobs/view/1234567890/&#10;https://in.indeed.com/viewjob?jk=...&#10;https://www.naukri.com/job-listings-..."></textarea>
+{% if jobsites.queued %}<p>{{ jobsites.queued|length }} URL(s) queued, {{ jobsites.pending|length }} still need a saved page{% if jobsites.pending %}:{% endif %}</p>
+{% if jobsites.pending %}<ul>{% for r in jobsites.pending %}<li><a href="{{ r.url }}" target="_blank" rel="noreferrer noopener">{{ r.url }}</a></li>{% endfor %}</ul>{% endif %}{% endif %}
+<p class="muted">Optional and riskier: <code>jobagent capture</code> opens a visible browser window that you sign in to yourself and loads each queued page once, saving it when you press Enter. It is still automation software, so the sites may detect it.</p>
+<button>Save LinkedIn / Indeed / Naukri settings</button>
+</form>
+</section>
+
+<section><h3>6. Check the parsed profile</h3>
 <p class="muted">Resume parsing is heuristic. Fix titles, employers, dates and bullets here. Mark extra true achievements that are not on your resume with <code>on_master_resume: false</code>.</p>
 <form method="post" action="/setup/profile">
 <input type="hidden" name="csrf_token" value="{{ csrf }}">

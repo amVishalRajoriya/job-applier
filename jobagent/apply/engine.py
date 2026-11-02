@@ -20,9 +20,12 @@ from ..config import Settings
 from ..db import Database, dumps, loads, now
 from ..profile import Profile
 from .adapters import ADAPTERS, FatalError, FormField, GenericFormAdapter, NeedsHuman, TransientError
+from ..sources.base import CAPABILITIES
 from .policy import allowed_domains_for, authorize, capability_for
 
 DONE = ("SUBMITTED", "SUBMISSION_UNVERIFIED", "INTERVIEW", "OFFER")
+ASSISTED_NOTE = ("{site} applications are never automated: open the application kit (`jobagent assist JOB_ID` or "
+                 "the job page in the dashboard), submit on the site yourself, then mark it as submitted")
 
 
 @contextmanager
@@ -108,7 +111,9 @@ def _fill_form(a: GenericFormAdapter, fields: list[FormField], current: dict, fi
 def inspect_form(settings: Settings, job) -> list[FormField]:
     """Open the form without filling or submitting, to collect its questions for review."""
     url = job["application_url"]
-    _, apply_status, _ = capability_for(url)
+    key, apply_status, _ = capability_for(url)
+    if apply_status == "assisted":
+        raise NeedsHuman(ASSISTED_NOTE.format(site=CAPABILITIES[key].name))
     if apply_status not in ("tested_local", "untested_live"):
         raise NeedsHuman("no automated adapter for this site: apply manually")
     for attempt in range(1, settings.max_apply_attempts + 1):
@@ -178,6 +183,8 @@ def submit(db: Database, settings: Settings, profile: Profile, job_id: int, acto
 
     url = job["application_url"]
     key, apply_status, _ = capability_for(url)
+    if apply_status == "assisted":
+        return _pause(db, job_id, app, actor, ASSISTED_NOTE.format(site=CAPABILITIES[key].name))
     if apply_status not in ("tested_local", "untested_live") or "generic_form" not in ADAPTERS:
         return _pause(db, job_id, app, actor, f"{key}: no automated adapter ({apply_status}); apply manually using "
                       "the prepared documents")
@@ -272,6 +279,9 @@ def dry_run(db: Database, settings: Settings, profile: Profile, job_id: int, act
     rep = {"job_id": job_id, "title": job["title"], "employer": job["employer"], "url": url, "source": key,
            "apply_status": apply_status, "at": ts, "submitted": False, "outcome": None, "detail": None,
            "fields": [], "open_questions": [], "invalid_fields": [], "blocked_requests": [], "evidence": {}}
+    if apply_status == "assisted":
+        rep.update(outcome="no_adapter", detail=ASSISTED_NOTE.format(site=CAPABILITIES[key].name))
+        return _finish_dry_run(db, actor, rep, out_dir)
     if apply_status not in ("tested_local", "untested_live"):
         rep.update(outcome="no_adapter", detail=f"{key}: no automated adapter ({apply_status}); apply manually")
         return _finish_dry_run(db, actor, rep, out_dir)

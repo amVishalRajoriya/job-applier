@@ -26,6 +26,7 @@ salary:
   expected:                  # per year, a number, e.g. 3500000 (optional if you give answer_text)
   minimum:                   # optional; jobs advertising less than this are skipped
   answer_text:               # exact words for "expected salary" questions, e.g. "Negotiable, 35-40 LPA"
+  current_text:              # optional; exact words for "current CTC" questions (Naukri asks), e.g. "24 LPA"
 
 notice_period_days:          # e.g. 60
 availability_date:           # optional, YYYY-MM-DD
@@ -57,7 +58,7 @@ approved_answers:
 #   https://jobs.ashbyhq.com/<company>        https://<company>.wd5.myworkdayjobs.com/<Site>
 #   a careers page (read only if it publishes schema.org JobPosting data), or an RSS/JSON feed.
 # Write "Employer Name | URL" to set the employer's display name.
-# LinkedIn and Indeed cannot be automated; add jobs from there to a manual jobs file.
+# LinkedIn, Indeed and Naukri are not boards: use alert emails, saved pages or `jobagent add-urls` (see README).
 boards:
   # - https://boards.greenhouse.io/examplecompany
 

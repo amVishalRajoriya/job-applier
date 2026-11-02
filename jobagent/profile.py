@@ -118,6 +118,7 @@ class Salary(BaseModel):
     expected: Optional[float] = None
     interval: str = "year"
     answer_text: Optional[str] = None  # candidate-approved wording, e.g. "Negotiable, 30-35 LPA"
+    current_text: Optional[str] = None  # candidate-approved answer to "current CTC/salary" (Naukri asks), e.g. "24 LPA"
 
 
 class Preferences(BaseModel):

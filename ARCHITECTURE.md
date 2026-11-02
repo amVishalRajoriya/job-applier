@@ -26,6 +26,8 @@ jobagent/
   resume_parser.py  PDF/DOCX/TXT/MD master resume -> structured resume
   skills.py         skill taxonomy, aliases, implications, domains, role families
   sources/          job discovery connectors + capability registry
+                    (jobsites.py: LinkedIn/Indeed/Naukri from alert emails + saved pages; never fetches those sites)
+  capture.py        opt-in supervised page capture in a visible browser the candidate controls
   normalize.py      normalization and cross-source deduplication
   requirements.py   JD -> typed requirements (required/preferred/responsibility/eligibility)
   filtering.py      eligibility + relevance + fraud/expiry screening
@@ -36,6 +38,7 @@ jobagent/
   answers.py        screening-question answering from candidate-approved data only
   llm.py            Claude integration (optional), always behind truth_guard
   apply/            application engine, authorization policy, Playwright adapters
+                    (assisted.py: kit + candidate-recorded submission for LinkedIn/Indeed/Naukri)
   pipeline.py       discover -> screen -> score -> optimize -> prepare
   report.py         CSV / JSON / HTML export
   web/              dashboard

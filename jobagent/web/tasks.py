@@ -99,6 +99,8 @@ def _check_sources(t: Task, db: Database, s: Settings):
     results = pipeline.check_sources(s)
     for r in results:
         t.say(f"OK   {r['source']}: {r['jobs']} jobs" if r["ok"] else f"FAIL {r['source']}: {r['error']}")
+        for n in r.get("notes", []):
+            t.say(f"     note: {n[:300]}")
     t.say(f"{sum(r['ok'] for r in results)} of {len(results)} boards reachable")
     return results
 
@@ -109,6 +111,8 @@ def _discover(t: Task, db: Database, s: Settings):
     t.say(f"fetched {out['fetched']}, new {out['new_jobs']}, duplicates merged {out['merged_duplicates']}")
     for e in out["errors"]:
         t.say(f"FAIL {e['source']}: {e['error'][:300]}")
+    for n in out.get("notes", []):
+        t.say(f"note {n['source']}: {n['note'][:300]}")
     return out
 
 

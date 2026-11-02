@@ -35,6 +35,8 @@ QUESTIONS: list[dict[str, str]] = [
      "prompt": "Exact wording to use when a form asks your salary expectation (e.g. 'Negotiable, 35-40 LPA')"},
     {"key": "notice_period_days", "kind": "int", "prompt": "Notice period in days"},
     {"key": "availability_date", "kind": "text", "prompt": "Earliest start date YYYY-MM-DD (optional)"},
+    {"key": "salary.current_text", "kind": "text",
+     "prompt": "Exact wording for 'current CTC / current salary' questions, which Naukri asks (optional, e.g. '24 LPA')"},
     {"key": "preferences.target_roles", "kind": "list", "prompt": "Target job titles, comma separated"},
     {"key": "preferences.adjacent_roles", "kind": "list", "prompt": "Adjacent titles you would also consider (optional)"},
     {"key": "preferences.locations", "kind": "list", "prompt": "Locations you would work in, comma separated (e.g. Bengaluru, Remote India)"},
@@ -210,9 +212,9 @@ def board_from_url(url: str, employer: str | None = None) -> tuple[dict | None, 
     u = urlparse(url)
     host = (u.hostname or "").lower()
     parts = [p for p in u.path.split("/") if p]
-    if host.endswith("linkedin.com") or host.endswith("indeed.com") or ".indeed." in host:
-        return None, (f"{host}: LinkedIn and Indeed cannot be automated (their terms forbid it). Add jobs you find "
-                      "there to a manual jobs file instead")
+    if host.endswith("linkedin.com") or host.endswith("indeed.com") or ".indeed." in host or host.endswith("naukri.com"):
+        return None, (f"{host}: LinkedIn, Indeed and Naukri are not watched as boards (their terms forbid automated "
+                      "access). Use the LinkedIn/Indeed/Naukri section instead: alert emails, saved pages, pasted URLs")
     if host in ("boards.greenhouse.io", "job-boards.greenhouse.io", "job-boards.eu.greenhouse.io") and parts:
         token = parts[0]
         return {"type": "greenhouse", "board_token": token, "employer": employer or _employer_from_slug(token)}, None
@@ -293,6 +295,46 @@ def update_config(config_path: Path, sources: list[dict] | None = None, custom_s
     if custom_skills:
         register_custom_skills(data["custom_skills"])
     return data
+
+
+# ---- LinkedIn / Indeed / Naukri inputs ---------------------------------------------------------
+
+JOBSITE_TYPES = ("job_alerts", "saved_pages")
+
+
+def jobsite_sources(sources: list[dict]) -> dict[str, dict]:
+    """The job_alerts and saved_pages entries in a source list, by type."""
+    return {c["type"]: c for c in sources if c.get("type") in JOBSITE_TYPES}
+
+
+def set_jobsite_sources(config_path: Path, *, pages_folder: str | None, urls_file: str | None,
+                        alerts_folder: str | None, imap: dict | None = None) -> list[dict]:
+    """Add, replace or remove the job_alerts / saved_pages sources in config.yaml. Returns the new source list.
+    Folders are created if missing. An IMAP password is never written here (only the env var name)."""
+    data = (yaml.safe_load(config_path.read_text()) or {}) if config_path.exists() else {}
+    current = jobsite_sources(data.get("sources") or [])
+    others = [c for c in data.get("sources") or [] if c.get("type") not in JOBSITE_TYPES]
+    new = []
+    if pages_folder:
+        Path(pages_folder).expanduser().mkdir(parents=True, exist_ok=True)
+        cfg = {**current.get("saved_pages", {}), "type": "saved_pages", "folder": pages_folder}
+        if urls_file:
+            cfg["urls_file"] = urls_file
+        new.append(cfg)
+    if alerts_folder or imap:
+        cfg = {k: v for k, v in current.get("job_alerts", {}).items() if k not in ("folder", "imap")}
+        cfg["type"] = "job_alerts"
+        if alerts_folder:
+            Path(alerts_folder).expanduser().mkdir(parents=True, exist_ok=True)
+            cfg["folder"] = alerts_folder
+        if imap:
+            if "password" in imap:
+                raise ValueError("the IMAP password goes in an environment variable, never in config.yaml")
+            cfg["imap"] = imap
+        new.append(cfg)
+    sources = others + new
+    update_config(config_path, sources=sources)
+    return sources
 
 
 # ---- interactive wizard ------------------------------------------------------------------------

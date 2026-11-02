@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from ..db import Database, dumps, loads, now
 from ..security import domain_allowed, host_of
 from ..sources.base import CAPABILITIES
+from ..sources.jobsites import NEVER_AUTOMATE, site_of
 
 DEFAULT_AUTO_CONSTRAINTS = {
     "min_final_score": 70,
@@ -31,7 +32,10 @@ def capability_for(url: str | None) -> tuple[str, str, list[str]]:
     """(capability key, apply_status, legitimate domains) for an application URL."""
     if not url:
         return "unknown", "manual_only", []
-    for key in ("testportal", "greenhouse", "lever", "ashby", "workday", "linkedin", "indeed"):
+    site = site_of(url)
+    if site:  # LinkedIn, Indeed, Naukri: always the candidate's own hands, whatever else is configured
+        return site, "assisted", list(CAPABILITIES[site].domains)
+    for key in ("testportal", "greenhouse", "lever", "ashby", "workday"):
         cap = CAPABILITIES[key]
         if cap.domains and domain_allowed(url, cap.domains):
             return key, cap.apply_status, list(cap.domains)
@@ -43,13 +47,18 @@ def allowed_domains_for(url: str, extra: list[str]) -> list[str]:
     host = host_of(url)
     if key == "testportal":
         return [host]  # only the exact local host, never "localhost" in general
-    return sorted({host, *domains, *extra})
+    # sites the agent must never drive are dropped even if config.yaml lists them
+    return sorted(d for d in {host, *domains, *extra} if d and not domain_allowed(f"https://{d}/", NEVER_AUTOMATE))
 
 
 def grant_auto_consent(db: Database, constraints: dict, actor: str = "candidate") -> int:
     merged = {**DEFAULT_AUTO_CONSTRAINTS, **constraints}
     if not merged["allowed_sources"] or not merged["allowed_domains"]:
         raise ValueError("auto-apply consent needs explicit allowed_sources and allowed_domains")
+    banned = [d for d in merged["allowed_domains"] if domain_allowed(f"https://{d}/", NEVER_AUTOMATE)]
+    if banned or "assisted" in merged["allowed_apply_status"]:
+        raise ValueError(f"LinkedIn, Indeed and Naukri applications are never automated (got {banned or 'assisted'}); "
+                         "use `jobagent assist JOB_ID` for those")
     with db.tx() as c:
         cur = c.execute("INSERT INTO consents(kind, constraints, statement, granted_at) VALUES ('auto_apply',?,?,?)",
                         (dumps(merged), CONSENT_STATEMENT, now()))

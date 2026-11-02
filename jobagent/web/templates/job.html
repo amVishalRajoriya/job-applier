@@ -59,14 +59,14 @@
 {% endif %}
 {% endfor %}</tbody></table>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-{% if can_dry_run and job.status not in ('SUBMITTED','SUBMISSION_UNVERIFIED','CLOSED') %}
+{% if can_dry_run and not kit and job.status not in ('SUBMITTED','SUBMISSION_UNVERIFIED','CLOSED') %}
 <form method="post" action="/jobs/{{ job.id }}/dry-run"><input type="hidden" name="csrf_token" value="{{ csrf }}">
 <button title="Opens the real form, fills it, screenshots it. Never submits.">Dry run (never submits)</button>
 <label class="muted"><input type="checkbox" name="show" value="1"> show the browser</label></form>{% endif %}
 {% if job.status == 'READY_FOR_REVIEW' %}
 <form method="post" action="/jobs/{{ job.id }}/approve"><input type="hidden" name="csrf_token" value="{{ csrf }}">
 <button>Approve documents and answers</button></form>{% endif %}
-{% if job.status == 'APPROVED' %}
+{% if job.status == 'APPROVED' and not kit %}
 <form method="post" action="/jobs/{{ job.id }}/submit" onsubmit="return confirm('Submit this application now? This sends it to the employer.')">
 <input type="hidden" name="csrf_token" value="{{ csrf }}">
 <button {% if mode != 'review' %}disabled title="switch to review mode on the Run page"{% endif %}>Submit this application</button></form>
@@ -74,6 +74,27 @@
 </div>
 {% if app.submitted_at %}<p>Submitted {{ app.submitted_at }} · verified: {{ 'yes' if app.verified else 'no' }} · reference {{ app.reference or '–' }}
 {% if verification.note %}· {{ verification.note }}{% endif %}</p>{% endif %}
+</section>
+{% endif %}
+
+{% if kit %}
+<section id="apply-yourself"><h3>Apply on {{ kit.site_name }} yourself</h3>
+<p class="muted">{{ kit.site_name }} applications are never automated: the site's terms forbid it and accounts that look automated get restricted. Everything below is prepared from your verified profile; you submit.</p>
+{% if kit.submitted %}<p class="ok">Recorded as {{ kit.status }}.</p>{% else %}
+<ol>{% for s in kit.steps %}<li>{{ s }}</li>{% endfor %}</ol>
+<p><a href="{{ kit.url }}" target="_blank" rel="noreferrer noopener"><b>Open the job on {{ kit.site_name }}</b></a> (opens in your normal browser)</p>
+{% set labels = {'docx': 'resume (Word)', 'pdf': 'resume (PDF)', 'txt': 'resume (text)', 'html': 'resume (HTML)', 'cover_letter_docx': 'cover letter (Word)', 'cover_letter_txt': 'cover letter (text)'} %}
+{% if kit.files %}<p>Files: {% for kind, path in kit.files.items() %}<a href="/files/{{ job.id }}/{{ kind }}">{{ labels.get(kind, kind) }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% else %}<p class="warn">No tailored resume yet: run Process on the <a href="/run">Run page</a>.</p>{% endif %}
+<table><thead><tr><th>Question these sites usually ask</th><th>Your answer</th><th></th></tr></thead><tbody>
+{% for a in kit.answers %}<tr><td>{{ a.question }}</td><td>{{ a.value if a.value is not none else '' }}</td>
+<td class="{{ 'ok' if a.status == 'answered' else 'warn' }}">{{ 'from your profile' if a.status == 'answered' else 'needs you' }}{% if a.note and a.status != 'answered' %}: {{ a.note }}{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+{% if kit.cover_letter %}<details><summary>Cover letter</summary><pre>{{ kit.cover_letter }}</pre></details>{% endif %}
+<form method="post" action="/jobs/{{ job.id }}/manual-submitted" style="display:flex;gap:8px;margin-top:10px" onsubmit="return confirm('Record that you submitted this application yourself?')">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<input name="reference" placeholder="Confirmation reference, if the site showed one">
+<button>I submitted it myself</button></form>{% endif %}
 </section>
 {% endif %}
 

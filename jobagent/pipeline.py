@@ -34,6 +34,7 @@ def run_discovery(db: Database, settings: Settings, source_configs: list[dict] |
         records, errors = discover(sources)
     finally:
         http.close()
+    notes = source_notes(sources)
     created = merged = 0
     for rec in records:
         _, is_new = upsert_job(db, rec)
@@ -41,7 +42,27 @@ def run_discovery(db: Database, settings: Settings, source_configs: list[dict] |
         merged += not is_new
     for e in errors:
         db.audit("discovery", "source_error", None, None, **e)
-    return {"fetched": len(records), "new_jobs": created, "merged_duplicates": merged, "errors": errors}
+    for n in notes:
+        db.audit("discovery", "source_note", None, None, **n)
+    out = {"fetched": len(records), "new_jobs": created, "merged_duplicates": merged, "errors": errors}
+    if notes:
+        out["notes"] = notes
+    return out
+
+
+def source_notes(sources) -> list[dict]:
+    """Things a source skipped that the candidate should know: saved pages that were a login wall or
+    CAPTCHA, and queued job URLs whose page has not been saved yet."""
+    out = []
+    for s in sources:
+        for p in getattr(s, "problems", []):
+            out.append({"source": s.name, "note": f"skipped {p}"})
+        pending = getattr(s, "pending", [])
+        if pending:
+            out.append({"source": s.name, "note": f"{len(pending)} queued job URL(s) have no saved page yet "
+                        "(save them from your browser, or run `jobagent capture`)",
+                        "urls": [r.url for r in pending]})
+    return out
 
 
 def _master_version(db: Database, settings: Settings, profile: Profile) -> tuple[int, ResumeDoc]:
@@ -66,7 +87,9 @@ def screen_and_score(db: Database, settings: Settings, profile: Profile, job_ids
         if job["status"] != "DISCOVERED":
             continue
         reqs = job_reqs(job)
-        res = screen(dict(job), reqs, profile, relevance_threshold=settings.relevance_threshold,
+        jd = dict(job)
+        jd["sources"] = [r["source"] for r in db.q("SELECT source FROM job_sources WHERE job_id=?", (job["id"],))]
+        res = screen(jd, reqs, profile, relevance_threshold=settings.relevance_threshold,
                      max_age_days=settings.max_job_age_days)
         flags = []
         if res.fraud_signals:
@@ -211,7 +234,8 @@ def retry_failed(db: Database, settings: Settings, profile: Profile) -> list[dic
 
 def source_label(cfg: dict) -> str:
     key = cfg.get("board_token") or cfg.get("site") or cfg.get("organization") or cfg.get("tenant") \
-        or cfg.get("url") or ", ".join(cfg.get("urls", [])) or cfg.get("path")
+        or cfg.get("url") or ", ".join(cfg.get("urls", [])) or cfg.get("path") or cfg.get("folder") \
+        or (cfg.get("imap") or {}).get("user")
     return f"{cfg['type']}:{key}" + (f" ({cfg['employer']})" if cfg.get("employer") else "")
 
 
@@ -225,7 +249,8 @@ def check_sources(settings: Settings) -> list[dict]:
                 jobs = list(src.fetch())
                 out.append({"source": source_label(cfg), "ok": True, "jobs": len(jobs),
                             "sample": [{"title": j.title, "location": j.location, "url": j.application_url}
-                                       for j in jobs[:3]]})
+                                       for j in jobs[:3]],
+                            "notes": [n["note"] for n in source_notes([src])]})
             except Exception as e:
                 out.append({"source": source_label(cfg), "ok": False, "error": f"{type(e).__name__}: {str(e)[:300]}"})
     finally:

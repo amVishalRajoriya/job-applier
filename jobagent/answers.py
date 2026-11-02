@@ -28,7 +28,8 @@ RULES: list[tuple[str, str]] = [
     ("website", r"website|portfolio|personal site"), ("resume", r"\b(resume|cv|curriculum)\b"),
     ("cover_letter", r"cover letter"), ("sponsorship", r"sponsor|visa"),
     ("work_authorization", r"authori[sz]ed to work|legally (eligible|authorized)|right to work|work permit|eligible to work"),
-    ("relocation", r"relocat"), ("salary", r"salary|compensation|\bctc\b|pay expectation|expected pay|remuneration"),
+    ("relocation", r"relocat"),
+    ("current_salary", r"(current|present|existing|last drawn) (ctc|salary|compensation|pay|package)"), ("salary", r"salary|compensation|\bctc\b|pay expectation|expected pay|remuneration"),
     ("notice_period", r"notice period|when can you (start|join)|earliest start|start date|availability to (start|join)|joining"),
     ("years_experience", r"years of (professional |relevant |work )?experience|how many years"),
     ("education", r"highest (level of )?education|highest degree|degree"),
@@ -119,6 +120,10 @@ def answer(question: str, profile: Profile, job: dict, options: list[str] | None
     if kind == "relocation":
         v = profile.preferences.willing_to_relocate
         return ok(None if v is None else _yes(v), "preferences.willing_to_relocate")
+    if kind == "current_salary":  # never answered with the expected salary
+        if profile.salary.current_text:
+            return ok(profile.salary.current_text, "salary.current_text")
+        return Answer(question, kind, None, None, "needs_input", "current salary not in profile")
     if kind == "salary":
         s = profile.salary
         if s.answer_text:

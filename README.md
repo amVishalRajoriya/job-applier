@@ -92,7 +92,8 @@ What setup does:
   | `.rss`, `.xml` or `.json` | Feed |
   | Any other careers page | Careers page (read only when it publishes JobPosting data) |
 
-  LinkedIn and Indeed URLs are refused with an explanation.
+  LinkedIn, Indeed and Naukri URLs are not boards and are refused here; see
+  [LinkedIn, Indeed and Naukri.com](#linkedin-indeed-and-naukricom) for how those sites work.
 - Skills the built-in taxonomy does not know are added to `custom_skills` in `config.yaml`, so job ads that
   mention them are matched.
 - Setup can set `mode` to `discovery` or `review`. It never turns on auto-apply.
@@ -172,9 +173,57 @@ python -m jobagent.cli run --loop --interval 3600   # or call `run` from cron
 | Workday | Public career-site search endpoint | Manual (Workday needs an account and often MFA) | Discovery against fixtures only. |
 | Company career pages | schema.org `JobPosting` JSON-LD, robots.txt respected | Manual unless the link is a supported ATS | Fixtures. |
 | RSS / JSON feeds | Standard feeds | Manual unless the link is a supported ATS | Fixtures. |
-| LinkedIn, Indeed | Not automated: their terms forbid scraping and automated applying, and neither offers a job-search API to individuals | Manual | Use a `manual` source file for jobs you find there; the agent still scores, tailors and tracks them. |
+| LinkedIn, Indeed, Naukri.com | Never scraped. Your job-alert emails (`job_alerts`) and pages you save from your own browser (`saved_pages`) | Assisted: you submit on the site; the agent prepares a kit and records the result. If a listing links straight to a Greenhouse or Lever form, that form is used (review mode) | `untested_live`. Parsers tested on SYNTHETIC fixtures only (`tests/fixtures/jobsites/`). |
 
 `python -m jobagent.cli sources` prints the live capability registry.
+
+## LinkedIn, Indeed and Naukri.com
+
+**The constraints, plainly.** All three sites forbid scraping and automated access in their terms of use. Most
+pages sit behind a login, and they use CAPTCHAs and bot detection. Accounts that look automated get restricted
+or banned, and LinkedIn in particular enforces this. None of them offers a job-search API to individuals
+(Indeed retired its public one). So this agent never logs in to them, never searches or crawls them, never fills
+or submits their forms, and nothing in `config.yaml` can turn that on: these domains are hard-blocked in the
+apply policy, in the form adapter and in auto-apply consent.
+
+What it does instead, using only what you already have:
+
+1. **Job-alert emails** (recommended). Turn on job alerts on each site. The agent reads the alerts:
+   - from a folder of saved `.eml` files or an `.mbox` export: `{type: job_alerts, folder: ~/JobAlerts}`, or
+   - read-only from your mailbox over IMAP:
+     `{type: job_alerts, imap: {host: imap.gmail.com, user: you@gmail.com, password_env: JOBAGENT_IMAP_PASSWORD}}`.
+     Use an app password in that environment variable. The agent opens the mailbox read-only, looks only at mail
+     from linkedin.com, indeed.com and naukri.com from the last 14 days (`since_days`), and never marks, moves
+     or deletes anything.
+   Only mail from those sites' own domains is trusted (`require_known_sender: true`), so a look-alike email
+   cannot add jobs. Alerts carry only a summary, so scores for alert-only jobs are rough.
+2. **Saved job pages.** Open a job in your own browser, signed in, and save it (Ctrl+S / Cmd+S, "Webpage,
+   complete" or single-file `.mhtml`) into the saved-pages folder: `{type: saved_pages, folder: ~/JobPages}`.
+   This gives the full description. A page that turns out to be a login wall or CAPTCHA is reported and skipped.
+3. **Pasted URLs.** `python -m jobagent.cli add-urls URL...` (or the Setup page) keeps a to-do list of job
+   pages to save. Nothing is fetched. `check-sources` and `discover` list the URLs still waiting for a page.
+4. **Supervised capture (optional, riskier).** `python -m jobagent.cli capture` opens a visible browser window
+   with its own profile. You sign in yourself; it loads each queued URL once and saves the page only when you
+   press Enter. It never clicks, types, scrolls, searches or applies, and stops after 25 pages. It is still
+   automation software and the sites can detect it, so saving pages yourself (step 2) is the safe default.
+   Set `JOBAGENT_BROWSER_CHANNEL=chrome` to use your installed Chrome.
+
+The same job from an alert and a saved page is merged into one. Jobs are then screened, scored and tailored
+like any other, under the same truth guard.
+
+**Applying.** On the job's dashboard page, or with `python -m jobagent.cli assist JOB_ID`, you get an
+application kit: the tailored resume and cover letter, and answers to the questions these sites usually ask
+(Naukri's current/expected CTC, notice period, experience, and so on), each taken from your verified profile.
+Anything not in your profile, such as current CTC unless you set `salary.current_text`, is marked "needs you",
+never guessed. The CLI opens the job in your normal browser. You submit, then click "I submitted it myself"
+(or `assist JOB_ID --submitted --reference REF`). It is recorded as `SUBMITTED` with `verified = no`, because
+the agent did not see the confirmation itself.
+
+**Tested how.** The cloud environment this was built in cannot reach these sites, and their terms forbid
+scraping, so every page and email in `tests/fixtures/jobsites/` was written by hand after the sites' public
+structure (schema.org `JobPosting` data, URL patterns, long-standing element ids). The real pages and emails
+change often. Before relying on it, save two or three real alerts and pages into your folders and run
+`check-sources`: it shows what was read and what was skipped.
 
 ## Safety properties (all covered by tests)
 
@@ -186,6 +235,8 @@ python -m jobagent.cli run --loop --interval 3600   # or call `run` from cron
 - One application per job: idempotency key, duplicate URL check, portal "already applied" detection, and a crash
   between clicking submit and recording the result becomes `SUBMISSION_UNVERIFIED` instead of a resubmission.
 - CAPTCHAs, logins and MFA are never bypassed; the application pauses for you.
+- LinkedIn, Indeed and Naukri.com are never automated: discovery reads only your alert emails and saved pages,
+  and applications there are submitted by you (`tests/test_jobsites.py`).
 - Profile encrypted at rest; per-application isolated browser contexts; append-only audit log; documents directory is `0700`.
 
 ## Known limitations

@@ -45,7 +45,11 @@ sources:
   # - {type: workday, host: example.wd5.myworkdayjobs.com, tenant: example, site: External, employer: Example, search_text: backend}
   # - {type: careerpage, urls: [https://example.com/careers], employer: Example}
   # - {type: feed, url: https://example.com/jobs.rss, name: example-feed}
-  # - {type: manual, path: my_jobs.yaml}   # jobs you found on LinkedIn / Indeed / referrals
+  # - {type: manual, path: my_jobs.yaml}   # jobs you found elsewhere (referrals etc.)
+  # LinkedIn / Indeed / Naukri: never scraped. Read your own alert emails and saved pages (see README):
+  # - {type: job_alerts, folder: ~/JobAlerts}                 # saved .eml / .mbox alert emails
+  # - {type: job_alerts, imap: {host: imap.gmail.com, user: you@gmail.com, password_env: JOBAGENT_IMAP_PASSWORD}}
+  # - {type: saved_pages, folder: ~/JobPages, urls_file: ~/JobPages/queue.txt}   # pages saved with Ctrl+S
 """
 
 
@@ -146,7 +150,8 @@ def cmd_check_sources(args):
     for r in results:
         if r["ok"]:
             print(f"OK   {r['source']}: {r['jobs']} jobs" + "".join(
-                f"\n       {j['title']} | {j['location'] or '?'} | {j['url']}" for j in r["sample"]))
+                f"\n       {j['title']} | {j['location'] or '?'} | {j['url']}" for j in r["sample"]) + "".join(
+                f"\n     note: {n}" for n in r.get("notes", [])))
         else:
             print(f"FAIL {r['source']}: {r['error']}")
     print(f"{sum(r['ok'] for r in results)}/{len(results)} sources fetched. Nothing was stored.")
@@ -185,6 +190,87 @@ def cmd_dry_run(args):
         print(f"  OPEN       {q['question']}" + (f" ({q['note']})" if q.get("note") else ""))
     print(f"requests blocked because they could send data: {len(rep['blocked_requests'])}")
     print(f"report: {rep['report']}\nscreenshot: {rep['evidence'].get('screenshot', 'none')}\nNothing was submitted.")
+
+
+def cmd_add_urls(args):
+    """Queue LinkedIn / Indeed / Naukri job URLs. Nothing is fetched."""
+    from .sources.jobsites import add_urls
+    s = load_settings(args.home)
+    urls = list(args.urls)
+    if args.file:
+        urls += Path(args.file).read_text().splitlines()
+    added, rejected = add_urls(s.urls_file, urls)
+    srcs = onboarding.jobsite_sources(s.sources)
+    if "saved_pages" not in srcs:
+        alerts = srcs.get("job_alerts", {})
+        onboarding.set_jobsite_sources(s.home / "config.yaml", pages_folder=str(s.saved_pages_dir),
+                                       urls_file=str(s.urls_file), alerts_folder=alerts.get("folder"),
+                                       imap=alerts.get("imap"))
+        print(f"added a saved_pages source to config.yaml (folder {s.saved_pages_dir})")
+    print(f"queued {len(added)} job URL(s) in {s.urls_file}")
+    for r in rejected:
+        print(f"  not a LinkedIn/Indeed/Naukri job URL, skipped: {r}")
+    print("Next: open each one in your own browser and save the page (Ctrl+S / Cmd+S) into the saved pages "
+          "folder, then run `jobagent discover`. (`jobagent capture` can help, with the risks it explains.)")
+
+
+def cmd_capture(args):
+    """Supervised capture of queued job pages in a visible browser (opt-in, see jobagent/capture.py)."""
+    from . import capture as C
+    from .sources.jobsites import SavedPagesSource
+    s = load_settings(args.home)
+    pages = onboarding.jobsite_sources(s.sources).get("saved_pages")
+    if not pages:
+        sys.exit("no saved_pages source configured: queue URLs first with `jobagent add-urls`")
+    folder = Path(pages["folder"]).expanduser()
+    folder.mkdir(parents=True, exist_ok=True)
+    src = SavedPagesSource(None, **{k: v for k, v in pages.items() if k != "type"})
+    list(src.fetch())
+    todo = src.pending  # queued URLs with no saved page yet
+    if not todo:
+        print("nothing to capture: every queued URL already has a saved page")
+        return
+    print(C.RISK_NOTICE)
+    print(f"\n{len(todo)} page(s) to save (at most {args.max} this session). The browser window is yours: sign in "
+          "and solve any check yourself. The agent only reads the page when you press Enter.")
+    if not args.yes and input('Type "yes" to open the capture browser: ').strip().lower() != "yes":
+        sys.exit("capture cancelled")
+
+    def ask(ref, i, n):
+        return input(f"[{i}/{n}] {ref.url}\n  Enter = save this page, s = skip, q = stop: ")
+
+    with C.visible_page(s) as page:
+        res = C.capture(page, todo, folder, ask, max_pages=args.max)
+    print(f"saved {sum(r['result'] == 'saved' for r in res)} of {len(res)}. Run `jobagent discover` next.")
+
+
+def cmd_assist(args):
+    """Prepare an application kit for a LinkedIn / Indeed / Naukri job, open it in your browser, record the result."""
+    import webbrowser
+    from .apply import assisted
+    s, db = _ctx(args)
+    if args.submitted:
+        r = assisted.record_manual_submission(db, args.job_id, args.reference, actor="candidate (cli)")
+        print(f"{r['outcome']}: job {args.job_id} is {r['status']}")
+        return
+    k, path = assisted.write_kit(db, s.documents_dir, _profile(db), args.job_id)
+    if k["submitted"]:
+        print(f"job {args.job_id} is already recorded as {k['status']}")
+        return
+    print(path.read_text())
+    if not k["assisted"]:
+        print("note: this job's application page is not on LinkedIn, Indeed or Naukri; `jobagent apply` may handle it")
+    if not args.no_open:
+        webbrowser.open(k["url"])  # your normal browser and your own session; nothing is automated
+    if args.no_ask:
+        print(f"When you have submitted it: jobagent assist {args.job_id} --submitted [--reference REF]")
+        return
+    if input("Did you submit the application yourself? [y/N] ").strip().lower() in ("y", "yes"):
+        ref = input("Confirmation reference shown by the site (Enter if none): ").strip() or None
+        r = assisted.record_manual_submission(db, args.job_id, ref, actor="candidate (cli)")
+        print(f"recorded: job {args.job_id} is {r['status']}")
+    else:
+        print(f"Not recorded. Later: jobagent assist {args.job_id} --submitted")
 
 
 def cmd_parse_resume(args):
@@ -389,6 +475,21 @@ def main(argv=None):
     x.add_argument("job_id", type=int)
     x.add_argument("--headful", action="store_true", help="show the browser and keep it open until you press Enter")
     x.set_defaults(fn=cmd_dry_run)
+    x = sub.add_parser("add-urls", help="queue LinkedIn/Indeed/Naukri job URLs (nothing is fetched)")
+    x.add_argument("urls", nargs="*")
+    x.add_argument("--file", help="text file with one URL per line")
+    x.set_defaults(fn=cmd_add_urls)
+    x = sub.add_parser("capture", help="opt-in: save queued job pages in a visible browser you control (read the risks)")
+    x.add_argument("--max", type=int, default=25, help="stop after this many pages (default 25)")
+    x.add_argument("--yes", action="store_true", help="skip the typed confirmation")
+    x.set_defaults(fn=cmd_capture)
+    x = sub.add_parser("assist", help="apply yourself on LinkedIn/Indeed/Naukri: kit, open the page, record the result")
+    x.add_argument("job_id", type=int)
+    x.add_argument("--no-open", action="store_true", help="do not open the job in your browser")
+    x.add_argument("--no-ask", action="store_true", help="do not ask whether you submitted")
+    x.add_argument("--submitted", action="store_true", help="record that you submitted it yourself")
+    x.add_argument("--reference", help="confirmation reference shown by the site")
+    x.set_defaults(fn=cmd_assist)
     p = sub.add_parser("profile", help="candidate profile")
     ps = p.add_subparsers(dest="pcmd", required=True)
     x = ps.add_parser("parse-resume", help="parse a master resume into a draft profile YAML")

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 from pathlib import Path
 from urllib.parse import quote
@@ -66,7 +67,15 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         sources = db.q("SELECT source, source_id, url, discovered_at FROM job_sources WHERE job_id=?", (job_id,))
         from ..documents import render_text
         from ..resume_doc import ResumeDoc
+        from ..apply import assisted
+        kit = None
+        if assisted.is_assisted(job):
+            try:
+                kit = assisted.kit(db, P.load(db), job_id)
+            except LookupError:
+                kit = None
         return TEMPLATES.TemplateResponse(request, "job.html", {
+            "kit": kit,
             "job": job, "app": app_row, "screen": loads(job["screen_result"], {}),
             "baseline": loads(base["breakdown"], None) if base else None,
             "final": loads(final["breakdown"], None) if final else None,
@@ -165,6 +174,16 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         db.audit("candidate (dashboard)", "mode_changed", None, None, mode=mode)
         return RedirectResponse("/run?msg=" + quote(f"mode set to {mode}"), status_code=303)
 
+    @app.post("/jobs/{job_id}/manual-submitted")
+    def manual_submitted(job_id: int, reference: str = Form(""), csrf_token: str = Form("")):
+        """The candidate submitted a LinkedIn / Indeed / Naukri application themselves."""
+        check_csrf(csrf_token)
+        from ..apply import assisted
+        if db.job(job_id) is None:
+            raise HTTPException(404)
+        assisted.record_manual_submission(db, job_id, reference.strip() or None, actor="candidate (dashboard)")
+        return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+
     @app.post("/jobs/{job_id}/answer")
     def set_answer(job_id: int, question: str = Form(...), value: str = Form(...), csrf_token: str = Form("")):
         check_csrf(csrf_token)
@@ -228,7 +247,23 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         except LookupError:
             prof = None
         srcs = current_sources()
+        from ..sources.jobsites import SavedPagesSource, queued_urls
+        js = onboarding.jobsite_sources(srcs)
+        pages, alerts = js.get("saved_pages") or {}, js.get("job_alerts") or {}
+        queued = queued_urls(pages.get("urls_file")) if pages else []
+        pending = []
+        if pages and Path(pages["folder"]).expanduser().is_dir():
+            src = SavedPagesSource(None, **{k: v for k, v in pages.items() if k != "type"})
+            try:
+                list(src.fetch())
+                pending = src.pending
+            except Exception:
+                pending = queued
         return TEMPLATES.TemplateResponse(request, "setup.html", {
+            "jobsites": {"pages_folder": pages.get("folder") or str(settings.saved_pages_dir),
+                         "alerts_folder": alerts.get("folder") or str(settings.alerts_dir),
+                         "imap": alerts.get("imap") or {}, "pages_on": bool(pages), "alerts_on": bool(alerts),
+                         "queued": queued, "pending": pending},
             "profile": prof, "rows": onboarding.form_rows(prof) if prof else [], "csrf": csrf, "msg": msg, "err": err,
             "todo": onboarding.unanswered(prof) if prof else [],
             "profile_yaml": P.to_yaml(prof) if prof else "",
@@ -300,6 +335,35 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         if mode:
             settings.mode = mode
         return back(msg="saved" + (f"; skipped: {'; '.join(problems)}" if problems else ""))
+
+    @app.post("/setup/jobsites")
+    def setup_jobsites(pages_folder: str = Form(""), alerts_folder: str = Form(""), imap_host: str = Form(""),
+                       imap_user: str = Form(""), imap_password_env: str = Form(""), urls: str = Form(""),
+                       csrf_token: str = Form("")):
+        """LinkedIn / Indeed / Naukri inputs: saved-pages folder, alert emails, pasted job URLs. Nothing is fetched."""
+        check_csrf(csrf_token)
+        from ..sources.jobsites import add_urls
+        imap = None
+        if imap_host.strip() and imap_user.strip():
+            env = imap_password_env.strip() or "JOBAGENT_IMAP_PASSWORD"
+            if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", env):
+                return back(err="the password setting takes the NAME of an environment variable, e.g. "
+                                "JOBAGENT_IMAP_PASSWORD, never the password itself")
+            imap = {"host": imap_host.strip(), "user": imap_user.strip(), "password_env": env,
+                    "mailbox": "INBOX", "since_days": 14}
+        pages = pages_folder.strip() or (str(settings.saved_pages_dir) if urls.strip() else "")
+        try:
+            new = onboarding.set_jobsite_sources(config_path, pages_folder=pages or None,
+                                                 urls_file=str(settings.urls_file) if pages else None,
+                                                 alerts_folder=alerts_folder.strip() or None, imap=imap)
+        except (ValueError, OSError) as e:
+            return back(err=str(e))
+        settings.sources = new
+        added, rejected = add_urls(settings.urls_file, urls.splitlines()) if urls.strip() else ([], [])
+        db.audit("candidate (dashboard)", "jobsite_inputs_saved", None, None, pages=bool(pages),
+                 alerts=bool(alerts_folder.strip() or imap), queued=len(added))
+        msg = "saved" + (f"; queued {len(added)} job URL(s)" if added else "")
+        return back(msg=msg, err=("not a LinkedIn/Indeed/Naukri job URL: " + "; ".join(rejected)) if rejected else "")
 
     @app.post("/setup/profile")
     def setup_profile(profile_yaml: str = Form(...), csrf_token: str = Form("")):
