@@ -1,0 +1,31 @@
+{
+ "jobs": [
+  {
+   "id": 6042172,
+   "title": "Backend Engineer, Core Technology",
+   "location": {
+    "name": "US-Remote, Chicago, Seattle, San Francisco"
+   },
+   "updated_at": "2026-09-10T13:11:58-04:00",
+   "first_published": "2024-06-14T18:04:50-04:00",
+   "absolute_url": "https://stripe.com/jobs/search?gh_jid=6042172",
+   "content": "<h3>About the role</h3><p>Backend engineering role on Stripe Infrastructure, responsible for reliability, scale, performance and cost of Stripe's systems. Locations: US-Remote, Chicago, Seattle, San Francisco (United States).</p><h3>Requirements</h3><ul><li>Write high-quality code in languages such as Go, Java, or C/C++</li><li>2-12+ years of professional hands-on software development experience</li><li>Experience with commonly used data structures and algorithms</li><li>Hands-on experience building large-scale distributed systems</li></ul><h3>Nice to have</h3><ul><li>Experience optimizing end-to-end performance of distributed systems</li></ul>",
+   "company_name": "Stripe"
+  },
+  {
+   "id": 8247127,
+   "title": "AR Analyst",
+   "location": {
+    "name": "Bangalore"
+   },
+   "updated_at": "2026-10-09T05:52:10-04:00",
+   "first_published": "2026-10-09T05:52:10-04:00",
+   "absolute_url": "https://stripe.com/jobs/search?gh_jid=8247127",
+   "content": "<h3>About the role</h3><p>AR Analyst on Stripe's Finance Operations team in Bangalore, onboarding custom contracts into billing systems and supporting flux analysis.</p><h3>Requirements</h3><ul><li>4-5 years of financial operations or billing experience, plus a degree in Business Administration or Finance</li><li>Strong knowledge of G Suite, Salesforce and MS Office</li><li>Analyzing contracts and large data sets</li></ul><h3>Nice to have</h3><ul><li>Knowledge of payments and the fintech industry</li></ul>",
+   "company_name": "Stripe"
+  }
+ ],
+ "meta": {
+  "total": 2
+ }
+}

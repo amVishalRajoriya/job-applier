@@ -1,0 +1,43 @@
+{
+ "jobs": [
+  {
+   "id": 4746983005,
+   "title": "Senior Software Development Engineer",
+   "location": {
+    "name": "Bengaluru"
+   },
+   "updated_at": "2026-10-30T07:46:55-04:00",
+   "first_published": "2026-10-30T07:46:55-04:00",
+   "absolute_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+   "content": "<h3>About the role</h3><p>Razorpay, a full-stack fintech company, is hiring a Senior Software Development Engineer in Bengaluru to build payment infrastructure at scale, with a focus on product thinking, code quality and AI-augmented development.</p><h3>Responsibilities</h3><ul><li>Scale Razorpay's payment infrastructure</li><li>Shape REST APIs used by developers worldwide</li><li>Drive product and design discussions</li></ul><h3>Requirements</h3><ul><li>3+ years of experience in technology</li><li>Proficiency in any one of PHP, Python, Django, Golang, Java or C++</li><li>Strong product design sense, focused on the user</li><li>Good understanding of REST APIs and the web in general</li><li>Ability to build a feature from scratch and drive it to completion independently</li><li>Clean, well-structured code with awareness of performance and time complexity</li><li>Hands-on use of AI coding assistants and critical review of AI-generated code</li><li>Strong low-level design depth</li></ul><h3>Nice to have</h3><ul><li>Side projects or open-source contributions on GitHub</li><li>Prior experience at a product company</li><li>Hands-on experience building with LLMs or agentic frameworks</li><li>Designing systems for scalability, reliability and fault tolerance</li></ul>",
+   "company_name": "Razorpay"
+  },
+  {
+   "id": 4746948005,
+   "title": "Lead Security Engineer",
+   "location": {
+    "name": "Bengaluru"
+   },
+   "updated_at": "2026-10-27T02:49:29-04:00",
+   "first_published": "2026-10-27T02:49:29-04:00",
+   "absolute_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+   "content": "<h3>About the role</h3><p>Product Security Lead at Razorpay in Bengaluru, building Secure Code Review and Threat Modeling capabilities and a self-serve design review program.</p><h3>Requirements</h3><ul><li>5-8 years of experience performing Secure Code Review and Design Reviews</li><li>Experience working with and extending Static Analysis tools</li><li>Intermediate development skills, preferably in Golang or Python</li><li>Understanding of Microservices and Cloud architecture</li><li>In-depth understanding of OWASP Top 10 vulnerabilities</li><li>Engineering degree in Computer Science or a related field</li></ul><h3>Nice to have</h3><ul><li>Semgrep experience</li><li>Master's degree</li></ul>",
+   "company_name": "Razorpay"
+  },
+  {
+   "id": 4730552005,
+   "title": "DevOps Enginer",
+   "location": {
+    "name": "Malaysia"
+   },
+   "updated_at": "2026-09-28T07:02:10-04:00",
+   "first_published": "2026-09-03T05:17:10-04:00",
+   "absolute_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4730552005",
+   "content": "<h3>About the role</h3><p>Permanent full-time DevOps role in Razorpay's Kuala Lumpur office, Malaysia, Monday to Friday, building and maintaining cloud infrastructure.</p><h3>Requirements</h3><ul><li>1-3 years of hands-on DevOps experience</li><li>Cloud infrastructure experience, preferably AWS</li><li>Docker and Kubernetes</li><li>Building AI agents or agentic workflows for DevOps</li><li>Puppet, Chef or Ansible</li><li>Scripting in Shell, Ruby, Perl, Python or Golang</li><li>Linux production troubleshooting</li><li>Terraform</li></ul><h3>Nice to have</h3><ul><li>MariaDB/MySQL</li><li>CI/CD, logging and monitoring stacks</li><li>Open-source contributions</li></ul>",
+   "company_name": "Razorpay"
+  }
+ ],
+ "meta": {
+  "total": 3
+ }
+}

@@ -1,0 +1,22 @@
+[
+ {
+  "id": "9a746e68-0858-4190-9144-54b19a2cbf2c",
+  "text": "cloud security engineer",
+  "categories": {
+   "team": "cloud and data security",
+   "location": "bengaluru",
+   "commitment": "Full-time"
+  },
+  "workplaceType": "onsite",
+  "createdAt": 1769676380859,
+  "hostedUrl": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c",
+  "applyUrl": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c/apply",
+  "descriptionPlain": "CRED is hiring a cloud security engineer in Bengaluru.",
+  "lists": [
+   {
+    "text": "Requirements",
+    "content": "<li>2-6 years of experience in information security</li><li>Fundamentals in computer networks, Linux, containers and secure cloud architecture</li><li>Strong programming skills in Python, Go or Bash</li><li>Hands-on cloud security experience in AWS, GCP or Azure</li><li>Building and automating custom security tools</li><li>Understanding of microservices, CI/CD pipelines and securing containerized workloads</li><li>Least privilege, defence-in-depth and zero trust</li><li>Vulnerability management, patching cycles and CVSS</li>"
+   }
+  ]
+ }
+]

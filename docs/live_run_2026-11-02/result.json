@@ -1,0 +1,1553 @@
+{
+ "discovery": {
+  "fetched": 9,
+  "new_jobs": 9,
+  "merged_duplicates": 0,
+  "errors": []
+ },
+ "screen": {
+  "screened": 9,
+  "passed": 5,
+  "scored": 5,
+  "optimized": 1,
+  "ready": 5,
+  "closed": 0,
+  "errors": []
+ },
+ "jobs": [
+  {
+   "row": {
+    "job_id": 9,
+    "title": "Cloud Network Engineer II",
+    "employer": "Zeta",
+    "location": "Hyderabad",
+    "remote_policy": "onsite",
+    "sources": "lever",
+    "status": "SCREENED",
+    "meets_criteria": false,
+    "disqualifiers": "location Hyderabad is outside preferred locations and candidate will not relocate",
+    "relevance": 0.822,
+    "baseline_score": null,
+    "final_score": null,
+    "optimization_outcome": null,
+    "resume_version": null,
+    "missing_qualifications": "",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5/apply",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": null,
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 9,
+    "dedup_key": "9be588c7d79f6fc55f0af0f74957b1d78e9838f0",
+    "canonical_url": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5",
+    "title": "Cloud Network Engineer II",
+    "employer": "Zeta",
+    "location": "Hyderabad",
+    "remote_policy": "onsite",
+    "description": "Zeta, a banking technology company, is hiring a Cloud Network Engineer II in Hyderabad, India (onsite) for its Global SRE team.\n\nRequirements\n- Bachelor's or Master's degree in Computer Science or IT\n- 2-3 years in Cloud Networking, Infrastructure Automation or DevOps\n- Hands-on AWS (mandatory), Linux and Terraform\n- Kubernetes experience\n- Python or Bash scripting for automation\n- Cloud networking: DNS, load balancers, VPC, security groups\n- CI/CD, Git, Helm\n\nNice to have\n- Amazon EKS experience",
+    "required_qualifications": "[\"Bachelor's or Master's degree in Computer Science or IT\", \"2-3 years in Cloud Networking, Infrastructure Automation or DevOps\", \"Hands-on AWS (mandatory), Linux and Terraform\", \"Kubernetes experience\", \"Python or Bash scripting for automation\", \"Cloud networking: DNS, load balancers, VPC, security groups\", \"CI/CD, Git, Helm\"]",
+    "preferred_qualifications": "[\"Amazon EKS experience\"]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": "full-time",
+    "date_posted": "2026-08-26",
+    "closing_date": null,
+    "original_url": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5",
+    "application_url": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5/apply",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "SCREENED",
+    "screen_result": "{\"disqualifiers\": [\"location Hyderabad is outside preferred locations and candidate will not relocate\"], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": false, \"relevance\": 0.822, \"unknowns\": [], \"warnings\": [\"first posted 2026-08-26, but still listed on the employer's board\"]}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:17+00:00"
+   }
+  },
+  {
+   "row": {
+    "job_id": 8,
+    "title": "cloud security engineer",
+    "employer": "CRED",
+    "location": "bengaluru",
+    "remote_policy": "onsite",
+    "sources": "lever",
+    "status": "READY_FOR_REVIEW",
+    "meets_criteria": true,
+    "disqualifiers": "",
+    "relevance": 0.745,
+    "baseline_score": 58.6,
+    "final_score": 58.6,
+    "optimization_outcome": "not_required",
+    "resume_version": "job8_v1",
+    "missing_qualifications": "skill: Linux; skill: Microservices; skill: Security",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c/apply",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c/apply",
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 8,
+    "dedup_key": "c2deb131c02746d73e419f3d62815c98d8e82f3d",
+    "canonical_url": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c",
+    "title": "cloud security engineer",
+    "employer": "CRED",
+    "location": "bengaluru",
+    "remote_policy": "onsite",
+    "description": "CRED is hiring a cloud security engineer in Bengaluru.\n\nRequirements\n- 2-6 years of experience in information security\n- Fundamentals in computer networks, Linux, containers and secure cloud architecture\n- Strong programming skills in Python, Go or Bash\n- Hands-on cloud security experience in AWS, GCP or Azure\n- Building and automating custom security tools\n- Understanding of microservices, CI/CD pipelines and securing containerized workloads\n- Least privilege, defence-in-depth and zero trust\n- Vulnerability management, patching cycles and CVSS",
+    "required_qualifications": "[\"2-6 years of experience in information security\", \"Fundamentals in computer networks, Linux, containers and secure cloud architecture\", \"Strong programming skills in Python, Go or Bash\", \"Hands-on cloud security experience in AWS, GCP or Azure\", \"Building and automating custom security tools\", \"Understanding of microservices, CI/CD pipelines and securing containerized workloads\", \"Least privilege, defence-in-depth and zero trust\", \"Vulnerability management, patching cycles and CVSS\"]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": "full-time",
+    "date_posted": "2026-01-29",
+    "closing_date": null,
+    "original_url": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c",
+    "application_url": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c/apply",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "READY_FOR_REVIEW",
+    "screen_result": "{\"disqualifiers\": [], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": true, \"relevance\": 0.745, \"unknowns\": [], \"warnings\": [\"first posted 2026-01-29, but still listed on the employer's board\"]}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:17+00:00"
+   },
+   "app": {
+    "id": 5,
+    "job_id": 8,
+    "idempotency_key": "d4ff96192fae5a70ef326cbbdb58f807a351f8cf7cddb7f8cfe9a2aec5c84206",
+    "resume_version_id": 6,
+    "cover_letter": "I am applying for the cloud security engineer role at CRED. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience.\n\nExperience from my resume that is most relevant to this role:\n- Migrated services to Docker containers deployed on AWS ECS with GitHub Actions pipelines.\n- Built loan eligibility services in Python and Flask processing 50,000 applications per month.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate",
+    "answers": "{}",
+    "unknowns": "[]",
+    "approved_at": null,
+    "approved_by": null,
+    "submitted_at": null,
+    "verified": 0,
+    "verification": null,
+    "reference": null,
+    "attempts": 0,
+    "last_error": null,
+    "retry_status": null,
+    "next_retry_at": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c/apply",
+    "created_at": "2026-11-02T11:26:17+00:00",
+    "updated_at": "2026-11-02T11:26:17+00:00"
+   },
+   "changes": {
+    "baseline_score": 58.6,
+    "changes": [
+     {
+      "after": "exp1.b4, exp1.b1, exp1.b2, exp1.b3",
+      "before": "exp1.b1, exp1.b2, exp1.b3, exp1.b4",
+      "evidence": [
+       "exp1.b4",
+       "exp1.b1",
+       "exp1.b2",
+       "exp1.b3"
+      ],
+      "kind": "reorder_bullets",
+      "reason": "most relevant evidence first",
+      "score_delta": null,
+      "target": "exp1"
+     },
+     {
+      "after": "Python, AWS, Docker, Django, Flask, SQL, PostgreSQL, Redis, REST APIs, Unit Testing, Agile, Java",
+      "before": "Python, Django, Flask, SQL, PostgreSQL, Redis, AWS, Docker, REST APIs, Unit Testing, Agile, Java",
+      "evidence": [],
+      "kind": "reorder_skills",
+      "reason": "requested skills first",
+      "score_delta": null,
+      "target": "skills"
+     }
+    ],
+    "cover_letter_source": "template",
+    "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+    "final_score": 58.6,
+    "outcome": "not_required",
+    "rejected_suggestions": [],
+    "remaining_gaps": [
+     "skill: Linux",
+     "skill: Microservices",
+     "skill: Security"
+    ]
+   },
+   "score": {
+    "kind": "final",
+    "total": 58.6,
+    "breakdown": {
+     "categories": {
+      "domain": {
+       "evidence": [],
+       "missing": [],
+       "name": "domain",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "education": {
+       "evidence": [],
+       "missing": [],
+       "name": "education",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "experience": {
+       "evidence": [
+        {
+         "bullet": "exp2.b1",
+         "text": "Built loan eligibility services in Python and Flask processing 50,000 applications per month."
+        }
+       ],
+       "missing": [],
+       "name": "experience",
+       "notes": [
+        "8.5 relevant years vs 2+ requested"
+       ],
+       "score": 0.7666666666666667,
+       "weight": 20.0
+      },
+      "preferred": {
+       "evidence": [],
+       "missing": [],
+       "name": "preferred",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "required_skills": {
+       "evidence": [
+        {
+         "credit": 1.0,
+         "evidence": [
+          "exp1.b1",
+          "exp2.b1"
+         ],
+         "how": "demonstrated",
+         "matched": "Python",
+         "skill": "one of: Bash, Go, Python"
+        },
+        {
+         "credit": 0.8,
+         "evidence": [
+          "exp1.b4"
+         ],
+         "how": "demonstrated",
+         "skill": "CI/CD"
+        },
+        {
+         "credit": 0.85,
+         "evidence": [
+          "exp1.b4"
+         ],
+         "how": "demonstrated",
+         "skill": "Docker"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Linux"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Microservices"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Security"
+        }
+       ],
+       "missing": [
+        "Linux",
+        "Microservices",
+        "Security"
+       ],
+       "name": "required_skills",
+       "notes": [],
+       "score": 0.44166666666666665,
+       "weight": 25.0
+      },
+      "responsibilities": {
+       "evidence": [],
+       "missing": [],
+       "name": "responsibilities",
+       "notes": [],
+       "score": null,
+       "weight": 25.0
+      }
+     },
+     "confidence": "medium",
+     "confidence_reasons": [
+      "8 requirements extracted from the job description",
+      "only 2 of 6 rubric categories applicable"
+     ],
+     "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+     "eligibility_failures": [],
+     "keyword_alignment": 27.3,
+     "missing_requirements": [
+      "skill: Linux",
+      "skill: Microservices",
+      "skill: Security"
+     ],
+     "recommended_changes": [
+      "No verified evidence of Linux: leave it out; address it in the cover letter only if true",
+      "No verified evidence of Microservices: leave it out; address it in the cover letter only if true",
+      "No verified evidence of Security: leave it out; address it in the cover letter only if true"
+     ],
+     "total": 58.6,
+     "transferable_skills": []
+    }
+   }
+  },
+  {
+   "row": {
+    "job_id": 7,
+    "title": "Data Engineer (SDE 2)",
+    "employer": "Fam (FamPay)",
+    "location": "Bengaluru",
+    "remote_policy": "onsite",
+    "sources": "lever",
+    "status": "READY_FOR_REVIEW",
+    "meets_criteria": true,
+    "disqualifiers": "",
+    "relevance": 0.67,
+    "baseline_score": 64.4,
+    "final_score": 64.4,
+    "optimization_outcome": "not_required",
+    "resume_version": "job7_v1",
+    "missing_qualifications": "skill: Airflow; skill: Kubernetes; skill: Spark; preferred: Real-time CDC with Debezium or PeerDB and Kafka; preferred: Iceberg, Delta or Hudi table formats; preferred: Flink ETL/ELT",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8/apply",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8/apply",
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 7,
+    "dedup_key": "f4dba1db1f40f9e4b4baf37597d0aaf726d4a47d",
+    "canonical_url": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8",
+    "title": "Data Engineer (SDE 2)",
+    "employer": "Fam (FamPay)",
+    "location": "Bengaluru",
+    "remote_policy": "onsite",
+    "description": "Fam (previously FamPay), an Indian payments app, is hiring a Data Engineer II to build a scalable data lakehouse with sub-minute latency and unified batch and streaming compute.\n\nRequirements\n- 3-5 years in data engineering with distributed and cloud-native systems\n- Expert Python, PySpark and SQL\n- Hands-on AWS (S3, EKS, MSK) and Infrastructure-as-Code\n- Airflow or Temporal experience\n- Proficiency with AI coding tools\n- Writing technical design documents\n- Domain modeling: facts, dimensions, SCDs\n\nNice to have\n- Real-time CDC with Debezium or PeerDB and Kafka\n- Iceberg, Delta or Hudi table formats\n- Flink ETL/ELT\n- Tuning Trino or ClickHouse",
+    "required_qualifications": "[\"3-5 years in data engineering with distributed and cloud-native systems\", \"Expert Python, PySpark and SQL\", \"Hands-on AWS (S3, EKS, MSK) and Infrastructure-as-Code\", \"Airflow or Temporal experience\", \"Proficiency with AI coding tools\", \"Writing technical design documents\", \"Domain modeling: facts, dimensions, SCDs\"]",
+    "preferred_qualifications": "[\"Real-time CDC with Debezium or PeerDB and Kafka\", \"Iceberg, Delta or Hudi table formats\", \"Flink ETL/ELT\", \"Tuning Trino or ClickHouse\"]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": "full-time",
+    "date_posted": "2026-08-21",
+    "closing_date": null,
+    "original_url": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8",
+    "application_url": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8/apply",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "READY_FOR_REVIEW",
+    "screen_result": "{\"disqualifiers\": [], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": true, \"relevance\": 0.67, \"unknowns\": [], \"warnings\": [\"first posted 2026-08-21, but still listed on the employer's board\"]}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:11+00:00"
+   },
+   "app": {
+    "id": 4,
+    "job_id": 7,
+    "idempotency_key": "67fd6888b8a669d06d3c18bf71250f61b97f042265089952cee7d2a25cf3c305",
+    "resume_version_id": 5,
+    "cover_letter": "I am applying for the Data Engineer (SDE 2) role at Fam (FamPay). I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience in payments.\n\nExperience from my resume that is most relevant to this role:\n- Maintained internal reporting dashboards using SQL and Excel.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Mentored 3 junior engineers and ran weekly code reviews.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate",
+    "answers": "{}",
+    "unknowns": "[]",
+    "approved_at": null,
+    "approved_by": null,
+    "submitted_at": null,
+    "verified": 0,
+    "verification": null,
+    "reference": null,
+    "attempts": 0,
+    "last_error": null,
+    "retry_status": null,
+    "next_retry_at": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8/apply",
+    "created_at": "2026-11-02T11:26:11+00:00",
+    "updated_at": "2026-11-02T11:26:11+00:00"
+   },
+   "changes": {
+    "baseline_score": 64.4,
+    "changes": [
+     {
+      "after": "exp1.b1, exp1.b4, exp1.b2, exp1.b3",
+      "before": "exp1.b1, exp1.b2, exp1.b3, exp1.b4",
+      "evidence": [
+       "exp1.b1",
+       "exp1.b4",
+       "exp1.b2",
+       "exp1.b3"
+      ],
+      "kind": "reorder_bullets",
+      "reason": "most relevant evidence first",
+      "score_delta": null,
+      "target": "exp1"
+     },
+     {
+      "after": "Python, SQL, AWS, Django, Flask, PostgreSQL, Redis, Docker, REST APIs, Unit Testing, Agile, Java",
+      "before": "Python, Django, Flask, SQL, PostgreSQL, Redis, AWS, Docker, REST APIs, Unit Testing, Agile, Java",
+      "evidence": [],
+      "kind": "reorder_skills",
+      "reason": "requested skills first",
+      "score_delta": null,
+      "target": "skills"
+     }
+    ],
+    "cover_letter_source": "template",
+    "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+    "final_score": 64.4,
+    "outcome": "not_required",
+    "rejected_suggestions": [],
+    "remaining_gaps": [
+     "skill: Airflow",
+     "skill: Kubernetes",
+     "skill: Spark",
+     "preferred: Real-time CDC with Debezium or PeerDB and Kafka",
+     "preferred: Iceberg, Delta or Hudi table formats",
+     "preferred: Flink ETL/ELT",
+     "preferred: Tuning Trino or ClickHouse"
+    ]
+   },
+   "score": {
+    "kind": "final",
+    "total": 64.4,
+    "breakdown": {
+     "categories": {
+      "domain": {
+       "evidence": [
+        {
+         "job_domains": [
+          "payments"
+         ],
+         "resume_domains": [
+          "fintech",
+          "payments"
+         ]
+        }
+       ],
+       "missing": [],
+       "name": "domain",
+       "notes": [],
+       "score": 1.0,
+       "weight": 10.0
+      },
+      "education": {
+       "evidence": [],
+       "missing": [],
+       "name": "education",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "experience": {
+       "evidence": [
+        {
+         "bullet": "exp1.b1",
+         "text": "Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants."
+        },
+        {
+         "bullet": "exp1.b3",
+         "text": "Mentored 3 junior engineers and ran weekly code reviews."
+        },
+        {
+         "bullet": "exp2.b1",
+         "text": "Built loan eligibility services in Python and Flask processing 50,000 applications per month."
+        }
+       ],
+       "missing": [],
+       "name": "experience",
+       "notes": [
+        "8.5 relevant years vs 3+ requested"
+       ],
+       "score": 1.0,
+       "weight": 20.0
+      },
+      "preferred": {
+       "evidence": [
+        {
+         "credit": 0.0,
+         "requirement": "Real-time CDC with Debezium or PeerDB and Kafka"
+        },
+        {
+         "credit": 0.0,
+         "requirement": "Iceberg, Delta or Hudi table formats"
+        },
+        {
+         "credit": 0.0,
+         "requirement": "Flink ETL/ELT"
+        },
+        {
+         "credit": 0.0,
+         "requirement": "Tuning Trino or ClickHouse"
+        }
+       ],
+       "missing": [
+        "Real-time CDC with Debezium or PeerDB and Kafka",
+        "Iceberg, Delta or Hudi table formats",
+        "Flink ETL/ELT",
+        "Tuning Trino or ClickHouse"
+       ],
+       "name": "preferred",
+       "notes": [],
+       "score": 0.0,
+       "weight": 10.0
+      },
+      "required_skills": {
+       "evidence": [
+        {
+         "credit": 0.85,
+         "evidence": [
+          "exp1.b4"
+         ],
+         "how": "demonstrated",
+         "skill": "AWS"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Airflow"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Kubernetes"
+        },
+        {
+         "credit": 1.0,
+         "evidence": [
+          "exp1.b1",
+          "exp2.b1"
+         ],
+         "how": "demonstrated",
+         "skill": "Python"
+        },
+        {
+         "credit": 1.0,
+         "evidence": [
+          "exp1.b2",
+          "exp3.b1"
+         ],
+         "how": "demonstrated",
+         "skill": "SQL"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Spark"
+        }
+       ],
+       "missing": [
+        "Airflow",
+        "Kubernetes",
+        "Spark"
+       ],
+       "name": "required_skills",
+       "notes": [],
+       "score": 0.47500000000000003,
+       "weight": 25.0
+      },
+      "responsibilities": {
+       "evidence": [],
+       "missing": [],
+       "name": "responsibilities",
+       "notes": [],
+       "score": null,
+       "weight": 25.0
+      }
+     },
+     "confidence": "high",
+     "confidence_reasons": [
+      "11 requirements extracted from the job description"
+     ],
+     "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+     "eligibility_failures": [],
+     "keyword_alignment": 37.5,
+     "missing_requirements": [
+      "skill: Airflow",
+      "skill: Kubernetes",
+      "skill: Spark",
+      "preferred: Real-time CDC with Debezium or PeerDB and Kafka",
+      "preferred: Iceberg, Delta or Hudi table formats",
+      "preferred: Flink ETL/ELT",
+      "preferred: Tuning Trino or ClickHouse"
+     ],
+     "recommended_changes": [
+      "No verified evidence of Airflow: leave it out; address it in the cover letter only if true",
+      "Add verified evidence of Kubernetes (profile items: proj1.b2)",
+      "No verified evidence of Spark: leave it out; address it in the cover letter only if true",
+      "Consider verified profile items not on this resume: proj1.b1"
+     ],
+     "total": 64.4,
+     "transferable_skills": []
+    }
+   }
+  },
+  {
+   "row": {
+    "job_id": 6,
+    "title": "Engineering Manager - Backend",
+    "employer": "Databricks",
+    "location": "Bengaluru, India",
+    "remote_policy": "remote",
+    "sources": "greenhouse",
+    "status": "READY_FOR_REVIEW",
+    "meets_criteria": true,
+    "disqualifiers": "",
+    "relevance": 0.6,
+    "baseline_score": 42.5,
+    "final_score": 42.5,
+    "optimization_outcome": "below_target_honest",
+    "resume_version": "job6_v1",
+    "missing_qualifications": "skill: System Design; experience: 10+ years of experience (resume shows 8.5)",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7439442002",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": "paused_for_candidate",
+    "blocker": "no automated adapter for this site: apply manually",
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 6,
+    "dedup_key": "79389384a97ebe34a8b45fcddef3543370e56d8a",
+    "canonical_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7439442002",
+    "title": "Engineering Manager - Backend",
+    "employer": "Databricks",
+    "location": "Bengaluru, India",
+    "remote_policy": "remote",
+    "description": "About the role\nOne of the first backend engineering managers on the Databricks India team in Bengaluru, building infrastructure for resource management and cloud-agnostic services.\nRequirements\n\n- 10+ years of experience with large-scale distributed systems\n- Extensive experience as a software engineering leader building teams from the ground up\n- Experience managing a team of strong software engineers\n- BS or higher in Computer Science or a related field",
+    "required_qualifications": "[]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": null,
+    "date_posted": "2024-05-07",
+    "closing_date": null,
+    "original_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7439442002",
+    "application_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7439442002",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "READY_FOR_REVIEW",
+    "screen_result": "{\"disqualifiers\": [], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": true, \"relevance\": 0.6, \"unknowns\": [], \"warnings\": [\"first posted 2024-05-07, but still listed on the employer's board\"]}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:04+00:00"
+   },
+   "app": {
+    "id": 3,
+    "job_id": 6,
+    "idempotency_key": "f0f35c35ae93177231e0306c4cfae25330317e33797b125b15071ade0bbed812",
+    "resume_version_id": 4,
+    "cover_letter": "I am applying for the Engineering Manager - Backend role at Databricks. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience.\n\nExperience from my resume that is most relevant to this role:\n- Mentored 3 junior engineers and ran weekly code reviews.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate",
+    "answers": "{}",
+    "unknowns": "[]",
+    "approved_at": null,
+    "approved_by": null,
+    "submitted_at": null,
+    "verified": 0,
+    "verification": null,
+    "reference": null,
+    "attempts": 0,
+    "last_error": null,
+    "retry_status": "paused_for_candidate",
+    "next_retry_at": null,
+    "blocker": "no automated adapter for this site: apply manually",
+    "created_at": "2026-11-02T11:26:04+00:00",
+    "updated_at": "2026-11-02T11:26:04+00:00"
+   },
+   "changes": {
+    "baseline_score": 42.5,
+    "changes": [
+     {
+      "after": "Senior Software Engineer with 8 years of experience.",
+      "before": "Backend engineer with eight years of experience building payment and lending services in Python.",
+      "evidence": [
+       "profile"
+      ],
+      "kind": "summary",
+      "reason": "summary restated from verified facts relevant to the job",
+      "score_delta": null,
+      "target": "summary"
+     },
+     {
+      "after": "exp1.b3, exp1.b1, exp1.b2, exp1.b4",
+      "before": "exp1.b1, exp1.b2, exp1.b3, exp1.b4",
+      "evidence": [
+       "exp1.b3",
+       "exp1.b1",
+       "exp1.b2",
+       "exp1.b4"
+      ],
+      "kind": "reorder_bullets",
+      "reason": "most relevant evidence first",
+      "score_delta": null,
+      "target": "exp1"
+     }
+    ],
+    "cover_letter_source": "template",
+    "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+    "final_score": 42.5,
+    "outcome": "below_target_honest",
+    "rejected_suggestions": [],
+    "remaining_gaps": [
+     "skill: System Design",
+     "experience: 10+ years of experience (resume shows 8.5)"
+    ]
+   },
+   "score": {
+    "kind": "final",
+    "total": 42.5,
+    "breakdown": {
+     "categories": {
+      "domain": {
+       "evidence": [],
+       "missing": [],
+       "name": "domain",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "education": {
+       "evidence": [
+        {
+         "education": "B.Tech in Computer Science, Example Institute of Technology (synthetic)"
+        }
+       ],
+       "missing": [],
+       "name": "education",
+       "notes": [],
+       "score": 1.0,
+       "weight": 10.0
+      },
+      "experience": {
+       "evidence": [
+        {
+         "bullet": "exp1.b3",
+         "text": "Mentored 3 junior engineers and ran weekly code reviews."
+        }
+       ],
+       "missing": [
+        "10+ years of experience (resume shows 8.5)"
+       ],
+       "name": "experience",
+       "notes": [
+        "8.5 relevant years vs 10+ requested"
+       ],
+       "score": 0.6691666666666667,
+       "weight": 20.0
+      },
+      "preferred": {
+       "evidence": [],
+       "missing": [],
+       "name": "preferred",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "required_skills": {
+       "evidence": [
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "System Design"
+        }
+       ],
+       "missing": [
+        "System Design"
+       ],
+       "name": "required_skills",
+       "notes": [],
+       "score": 0.0,
+       "weight": 25.0
+      },
+      "responsibilities": {
+       "evidence": [],
+       "missing": [],
+       "name": "responsibilities",
+       "notes": [],
+       "score": null,
+       "weight": 25.0
+      }
+     },
+     "confidence": "low",
+     "confidence_reasons": [
+      "4 requirements extracted from the job description",
+      "only 3 of 6 rubric categories applicable"
+     ],
+     "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+     "eligibility_failures": [],
+     "keyword_alignment": 0.0,
+     "missing_requirements": [
+      "skill: System Design",
+      "experience: 10+ years of experience (resume shows 8.5)"
+     ],
+     "recommended_changes": [
+      "No verified evidence of System Design: leave it out; address it in the cover letter only if true"
+     ],
+     "total": 42.5,
+     "transferable_skills": []
+    }
+   }
+  },
+  {
+   "row": {
+    "job_id": 5,
+    "title": "AR Analyst",
+    "employer": "Stripe",
+    "location": "Bangalore",
+    "remote_policy": null,
+    "sources": "greenhouse",
+    "status": "SCREENED",
+    "meets_criteria": false,
+    "disqualifiers": "not relevant to target roles (relevance 0.00)",
+    "relevance": 0.0,
+    "baseline_score": null,
+    "final_score": null,
+    "optimization_outcome": null,
+    "resume_version": null,
+    "missing_qualifications": "",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://stripe.com/jobs/search?gh_jid=8247127",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": null,
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 5,
+    "dedup_key": "cd3e57c47fa2ef10873495cd356c1377ad33bb39",
+    "canonical_url": "https://stripe.com/jobs/search?gh_jid=8247127",
+    "title": "AR Analyst",
+    "employer": "Stripe",
+    "location": "Bangalore",
+    "remote_policy": null,
+    "description": "About the role\nAR Analyst on Stripe's Finance Operations team in Bangalore, onboarding custom contracts into billing systems and supporting flux analysis.\nRequirements\n\n- 4-5 years of financial operations or billing experience, plus a degree in Business Administration or Finance\n- Strong knowledge of G Suite, Salesforce and MS Office\n- Analyzing contracts and large data sets\nNice to have\n\n- Knowledge of payments and the fintech industry",
+    "required_qualifications": "[]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": null,
+    "date_posted": "2026-10-09",
+    "closing_date": null,
+    "original_url": "https://stripe.com/jobs/search?gh_jid=8247127",
+    "application_url": "https://stripe.com/jobs/search?gh_jid=8247127",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "SCREENED",
+    "screen_result": "{\"disqualifiers\": [\"not relevant to target roles (relevance 0.00)\"], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": false, \"relevance\": 0.0, \"unknowns\": [], \"warnings\": []}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:03+00:00"
+   }
+  },
+  {
+   "row": {
+    "job_id": 4,
+    "title": "Backend Engineer, Core Technology",
+    "employer": "Stripe",
+    "location": "US-Remote, Chicago, Seattle, San Francisco",
+    "remote_policy": "remote",
+    "sources": "greenhouse",
+    "status": "SCREENED",
+    "meets_criteria": false,
+    "disqualifiers": "remote role restricted to US, where the candidate is not authorized to work",
+    "relevance": 0.733,
+    "baseline_score": null,
+    "final_score": null,
+    "optimization_outcome": null,
+    "resume_version": null,
+    "missing_qualifications": "",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://stripe.com/jobs/search?gh_jid=6042172",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": null,
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 4,
+    "dedup_key": "46926f488daf988a35f6a62f736bf3424c8c4a1c",
+    "canonical_url": "https://stripe.com/jobs/search?gh_jid=6042172",
+    "title": "Backend Engineer, Core Technology",
+    "employer": "Stripe",
+    "location": "US-Remote, Chicago, Seattle, San Francisco",
+    "remote_policy": "remote",
+    "description": "About the role\nBackend engineering role on Stripe Infrastructure, responsible for reliability, scale, performance and cost of Stripe's systems. Locations: US-Remote, Chicago, Seattle, San Francisco (United States).\nRequirements\n\n- Write high-quality code in languages such as Go, Java, or C/C++\n- 2-12+ years of professional hands-on software development experience\n- Experience with commonly used data structures and algorithms\n- Hands-on experience building large-scale distributed systems\nNice to have\n\n- Experience optimizing end-to-end performance of distributed systems",
+    "required_qualifications": "[]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": null,
+    "date_posted": "2024-06-14",
+    "closing_date": null,
+    "original_url": "https://stripe.com/jobs/search?gh_jid=6042172",
+    "application_url": "https://stripe.com/jobs/search?gh_jid=6042172",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "SCREENED",
+    "screen_result": "{\"disqualifiers\": [\"remote role restricted to US, where the candidate is not authorized to work\"], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": false, \"relevance\": 0.733, \"unknowns\": [], \"warnings\": [\"first posted 2024-06-14, but still listed on the employer's board\"]}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:03+00:00"
+   }
+  },
+  {
+   "row": {
+    "job_id": 3,
+    "title": "DevOps Enginer",
+    "employer": "Razorpay",
+    "location": "Malaysia",
+    "remote_policy": null,
+    "sources": "greenhouse",
+    "status": "SCREENED",
+    "meets_criteria": false,
+    "disqualifiers": "location Malaysia is outside preferred locations and candidate will not relocate",
+    "relevance": 0.62,
+    "baseline_score": null,
+    "final_score": null,
+    "optimization_outcome": null,
+    "resume_version": null,
+    "missing_qualifications": "",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4730552005",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": null,
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 3,
+    "dedup_key": "747ee0733fe59cfc9864c682caa6fbc06dd05a7e",
+    "canonical_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4730552005",
+    "title": "DevOps Enginer",
+    "employer": "Razorpay",
+    "location": "Malaysia",
+    "remote_policy": null,
+    "description": "About the role\nPermanent full-time DevOps role in Razorpay's Kuala Lumpur office, Malaysia, Monday to Friday, building and maintaining cloud infrastructure.\nRequirements\n\n- 1-3 years of hands-on DevOps experience\n- Cloud infrastructure experience, preferably AWS\n- Docker and Kubernetes\n- Building AI agents or agentic workflows for DevOps\n- Puppet, Chef or Ansible\n- Scripting in Shell, Ruby, Perl, Python or Golang\n- Linux production troubleshooting\n- Terraform\nNice to have\n\n- MariaDB/MySQL\n- CI/CD, logging and monitoring stacks\n- Open-source contributions",
+    "required_qualifications": "[]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": "full-time",
+    "date_posted": "2026-09-03",
+    "closing_date": null,
+    "original_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4730552005",
+    "application_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4730552005",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "SCREENED",
+    "screen_result": "{\"disqualifiers\": [\"location Malaysia is outside preferred locations and candidate will not relocate\"], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": false, \"relevance\": 0.62, \"unknowns\": [], \"warnings\": []}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:03+00:00"
+   }
+  },
+  {
+   "row": {
+    "job_id": 2,
+    "title": "Lead Security Engineer",
+    "employer": "Razorpay",
+    "location": "Bengaluru",
+    "remote_policy": null,
+    "sources": "greenhouse",
+    "status": "READY_FOR_REVIEW",
+    "meets_criteria": true,
+    "disqualifiers": "",
+    "relevance": 0.733,
+    "baseline_score": 65.4,
+    "final_score": 65.4,
+    "optimization_outcome": "not_required",
+    "resume_version": "job2_v1",
+    "missing_qualifications": "skill: Microservices; preferred: Semgrep experience; preferred: Master's degree",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 2,
+    "dedup_key": "a7cf332e456205245aa4c968198272ac0a5fdf25",
+    "canonical_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+    "title": "Lead Security Engineer",
+    "employer": "Razorpay",
+    "location": "Bengaluru",
+    "remote_policy": null,
+    "description": "About the role\nProduct Security Lead at Razorpay in Bengaluru, building Secure Code Review and Threat Modeling capabilities and a self-serve design review program.\nRequirements\n\n- 5-8 years of experience performing Secure Code Review and Design Reviews\n- Experience working with and extending Static Analysis tools\n- Intermediate development skills, preferably in Golang or Python\n- Understanding of Microservices and Cloud architecture\n- In-depth understanding of OWASP Top 10 vulnerabilities\n- Engineering degree in Computer Science or a related field\nNice to have\n\n- Semgrep experience\n- Master's degree",
+    "required_qualifications": "[]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": null,
+    "date_posted": "2026-10-27",
+    "closing_date": null,
+    "original_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+    "application_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "READY_FOR_REVIEW",
+    "screen_result": "{\"disqualifiers\": [], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": true, \"relevance\": 0.733, \"unknowns\": [], \"warnings\": []}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:26:03+00:00"
+   },
+   "app": {
+    "id": 2,
+    "job_id": 2,
+    "idempotency_key": "1927c1ad4e359ee0685458644c1afe49447117f97d730b28b7575574f4694794",
+    "resume_version_id": 3,
+    "cover_letter": "I am applying for the Lead Security Engineer role at Razorpay. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience.\n\nExperience from my resume that is most relevant to this role:\n- Mentored 3 junior engineers and ran weekly code reviews.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Built loan eligibility services in Python and Flask processing 50,000 applications per month.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate",
+    "answers": "{}",
+    "unknowns": "[]",
+    "approved_at": null,
+    "approved_by": null,
+    "submitted_at": null,
+    "verified": 0,
+    "verification": null,
+    "reference": null,
+    "attempts": 0,
+    "last_error": null,
+    "retry_status": null,
+    "next_retry_at": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005",
+    "created_at": "2026-11-02T11:26:03+00:00",
+    "updated_at": "2026-11-02T11:26:03+00:00"
+   },
+   "changes": {
+    "baseline_score": 65.4,
+    "changes": [
+     {
+      "after": "exp1.b3, exp1.b1, exp1.b2, exp1.b4",
+      "before": "exp1.b1, exp1.b2, exp1.b3, exp1.b4",
+      "evidence": [
+       "exp1.b3",
+       "exp1.b1",
+       "exp1.b2",
+       "exp1.b4"
+      ],
+      "kind": "reorder_bullets",
+      "reason": "most relevant evidence first",
+      "score_delta": null,
+      "target": "exp1"
+     }
+    ],
+    "cover_letter_source": "template",
+    "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+    "final_score": 65.4,
+    "outcome": "not_required",
+    "rejected_suggestions": [],
+    "remaining_gaps": [
+     "skill: Microservices",
+     "preferred: Semgrep experience",
+     "preferred: Master's degree"
+    ]
+   },
+   "score": {
+    "kind": "final",
+    "total": 65.4,
+    "breakdown": {
+     "categories": {
+      "domain": {
+       "evidence": [],
+       "missing": [],
+       "name": "domain",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "education": {
+       "evidence": [
+        {
+         "education": "B.Tech in Computer Science, Example Institute of Technology (synthetic)"
+        }
+       ],
+       "missing": [],
+       "name": "education",
+       "notes": [],
+       "score": 1.0,
+       "weight": 10.0
+      },
+      "experience": {
+       "evidence": [
+        {
+         "bullet": "exp1.b3",
+         "text": "Mentored 3 junior engineers and ran weekly code reviews."
+        },
+        {
+         "bullet": "exp1.b1",
+         "text": "Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants."
+        },
+        {
+         "bullet": "exp2.b1",
+         "text": "Built loan eligibility services in Python and Flask processing 50,000 applications per month."
+        }
+       ],
+       "missing": [],
+       "name": "experience",
+       "notes": [
+        "8.5 relevant years vs 5+ requested"
+       ],
+       "score": 1.0,
+       "weight": 20.0
+      },
+      "preferred": {
+       "evidence": [
+        {
+         "credit": 0.0,
+         "requirement": "Semgrep experience"
+        },
+        {
+         "credit": 0.0,
+         "requirement": "Master's degree"
+        }
+       ],
+       "missing": [
+        "Semgrep experience",
+        "Master's degree"
+       ],
+       "name": "preferred",
+       "notes": [],
+       "score": 0.0,
+       "weight": 10.0
+      },
+      "required_skills": {
+       "evidence": [
+        {
+         "credit": 1.0,
+         "evidence": [
+          "exp1.b1",
+          "exp2.b1"
+         ],
+         "how": "demonstrated",
+         "matched": "Python",
+         "skill": "one of: Go, Python"
+        },
+        {
+         "credit": 0.0,
+         "evidence": null,
+         "how": "missing",
+         "skill": "Microservices"
+        }
+       ],
+       "missing": [
+        "Microservices"
+       ],
+       "name": "required_skills",
+       "notes": [],
+       "score": 0.5,
+       "weight": 25.0
+      },
+      "responsibilities": {
+       "evidence": [],
+       "missing": [],
+       "name": "responsibilities",
+       "notes": [],
+       "score": null,
+       "weight": 25.0
+      }
+     },
+     "confidence": "high",
+     "confidence_reasons": [
+      "8 requirements extracted from the job description"
+     ],
+     "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+     "eligibility_failures": [],
+     "keyword_alignment": 33.3,
+     "missing_requirements": [
+      "skill: Microservices",
+      "preferred: Semgrep experience",
+      "preferred: Master's degree"
+     ],
+     "recommended_changes": [
+      "No verified evidence of Microservices: leave it out; address it in the cover letter only if true"
+     ],
+     "total": 65.4,
+     "transferable_skills": []
+    }
+   }
+  },
+  {
+   "row": {
+    "job_id": 1,
+    "title": "Senior Software Development Engineer",
+    "employer": "Razorpay",
+    "location": "Bengaluru",
+    "remote_policy": null,
+    "sources": "greenhouse",
+    "status": "READY_FOR_REVIEW",
+    "meets_criteria": true,
+    "disqualifiers": "",
+    "relevance": 0.822,
+    "baseline_score": 83.9,
+    "final_score": 83.9,
+    "optimization_outcome": "not_required",
+    "resume_version": "job1_v1",
+    "missing_qualifications": "preferred: Prior experience at a product company; preferred: Hands-on experience building with LLMs or agentic frameworks",
+    "date_applied": null,
+    "submission_verified": null,
+    "reference": null,
+    "application_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "error": null,
+    "retry_status": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+    "flags": "",
+    "discovered_at": "2026-11-02T11:25:50+00:00"
+   },
+   "job": {
+    "id": 1,
+    "dedup_key": "26cd752b69b34132546907517fe57834a34a7c48",
+    "canonical_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+    "title": "Senior Software Development Engineer",
+    "employer": "Razorpay",
+    "location": "Bengaluru",
+    "remote_policy": null,
+    "description": "About the role\nRazorpay, a full-stack fintech company, is hiring a Senior Software Development Engineer in Bengaluru to build payment infrastructure at scale, with a focus on product thinking, code quality and AI-augmented development.\nResponsibilities\n\n- Scale Razorpay's payment infrastructure\n- Shape REST APIs used by developers worldwide\n- Drive product and design discussions\nRequirements\n\n- 3+ years of experience in technology\n- Proficiency in any one of PHP, Python, Django, Golang, Java or C++\n- Strong product design sense, focused on the user\n- Good understanding of REST APIs and the web in general\n- Ability to build a feature from scratch and drive it to completion independently\n- Clean, well-structured code with awareness of performance and time complexity\n- Hands-on use of AI coding assistants and critical review of AI-generated code\n- Strong low-level design depth\nNice to have\n\n- Side projects or open-source contributions on GitHub\n- Prior experience at a product company\n- Hands-on experience building with LLMs or agentic frameworks\n- Designing systems for scalability, reliability and fault tolerance",
+    "required_qualifications": "[]",
+    "preferred_qualifications": "[]",
+    "experience_requirement": null,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_currency": null,
+    "salary_interval": null,
+    "employment_type": null,
+    "date_posted": "2026-10-30",
+    "closing_date": null,
+    "original_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+    "application_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+    "discovered_at": "2026-11-02T11:25:50+00:00",
+    "status": "READY_FOR_REVIEW",
+    "screen_result": "{\"disqualifiers\": [], \"expired\": false, \"fraud_signals\": [], \"injection\": [], \"passed\": true, \"relevance\": 0.822, \"unknowns\": [], \"warnings\": []}",
+    "flags": "[]",
+    "follow_up_date": null,
+    "recruiter_response": null,
+    "notes": null,
+    "updated_at": "2026-11-02T11:25:57+00:00"
+   },
+   "app": {
+    "id": 1,
+    "job_id": 1,
+    "idempotency_key": "6d745583394bf6aaca7353e77ef4456a52b1d43417de65c74d5726e940310cef",
+    "resume_version_id": 2,
+    "cover_letter": "I am applying for the Senior Software Development Engineer role at Razorpay. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience in fintech.\n\nExperience from my resume that is most relevant to this role:\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Mentored 3 junior engineers and ran weekly code reviews.\n- Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate",
+    "answers": "{}",
+    "unknowns": "[]",
+    "approved_at": null,
+    "approved_by": null,
+    "submitted_at": null,
+    "verified": 0,
+    "verification": null,
+    "reference": null,
+    "attempts": 0,
+    "last_error": null,
+    "retry_status": null,
+    "next_retry_at": null,
+    "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005",
+    "created_at": "2026-11-02T11:25:57+00:00",
+    "updated_at": "2026-11-02T11:25:57+00:00"
+   },
+   "changes": {
+    "baseline_score": 83.9,
+    "changes": [
+     {
+      "after": "exp1.b1, exp1.b3, exp1.b4, exp1.b2",
+      "before": "exp1.b1, exp1.b2, exp1.b3, exp1.b4",
+      "evidence": [
+       "exp1.b1",
+       "exp1.b3",
+       "exp1.b4",
+       "exp1.b2"
+      ],
+      "kind": "reorder_bullets",
+      "reason": "most relevant evidence first",
+      "score_delta": null,
+      "target": "exp1"
+     },
+     {
+      "after": "exp3.b2, exp3.b1",
+      "before": "exp3.b1, exp3.b2",
+      "evidence": [
+       "exp3.b2",
+       "exp3.b1"
+      ],
+      "kind": "reorder_bullets",
+      "reason": "most relevant evidence first",
+      "score_delta": null,
+      "target": "exp3"
+     },
+     {
+      "after": "Python, Django, REST APIs, Java, Flask, SQL, PostgreSQL, Redis, AWS, Docker, Unit Testing, Agile",
+      "before": "Python, Django, Flask, SQL, PostgreSQL, Redis, AWS, Docker, REST APIs, Unit Testing, Agile, Java",
+      "evidence": [],
+      "kind": "reorder_skills",
+      "reason": "requested skills first",
+      "score_delta": null,
+      "target": "skills"
+     }
+    ],
+    "cover_letter_source": "template",
+    "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+    "final_score": 83.9,
+    "outcome": "not_required",
+    "rejected_suggestions": [],
+    "remaining_gaps": [
+     "preferred: Prior experience at a product company",
+     "preferred: Hands-on experience building with LLMs or agentic frameworks"
+    ]
+   },
+   "score": {
+    "kind": "final",
+    "total": 83.9,
+    "breakdown": {
+     "categories": {
+      "domain": {
+       "evidence": [
+        {
+         "job_domains": [
+          "fintech"
+         ],
+         "resume_domains": [
+          "fintech",
+          "payments"
+         ]
+        }
+       ],
+       "missing": [],
+       "name": "domain",
+       "notes": [],
+       "score": 1.0,
+       "weight": 10.0
+      },
+      "education": {
+       "evidence": [],
+       "missing": [],
+       "name": "education",
+       "notes": [],
+       "score": null,
+       "weight": 10.0
+      },
+      "experience": {
+       "evidence": [
+        {
+         "bullet": "exp1.b1",
+         "text": "Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants."
+        },
+        {
+         "bullet": "exp1.b3",
+         "text": "Mentored 3 junior engineers and ran weekly code reviews."
+        },
+        {
+         "bullet": "exp1.b2",
+         "text": "Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions."
+        }
+       ],
+       "missing": [],
+       "name": "experience",
+       "notes": [
+        "8.5 relevant years vs 3+ requested"
+       ],
+       "score": 1.0,
+       "weight": 20.0
+      },
+      "preferred": {
+       "evidence": [
+        {
+         "credit": 0.8,
+         "requirement": "Side projects or open-source contributions on GitHub"
+        },
+        {
+         "credit": 0.0,
+         "requirement": "Prior experience at a product company"
+        },
+        {
+         "credit": 0.0,
+         "requirement": "Hands-on experience building with LLMs or agentic frameworks"
+        },
+        {
+         "credit": 0.37,
+         "requirement": "Designing systems for scalability, reliability and fault tolerance"
+        }
+       ],
+       "missing": [
+        "Prior experience at a product company",
+        "Hands-on experience building with LLMs or agentic frameworks"
+       ],
+       "name": "preferred",
+       "notes": [],
+       "score": 0.2925925925925926,
+       "weight": 10.0
+      },
+      "required_skills": {
+       "evidence": [
+        {
+         "credit": 1.0,
+         "evidence": [
+          "exp1.b1"
+         ],
+         "how": "demonstrated",
+         "matched": "Django",
+         "skill": "one of: C++, Django, Go, Java, PHP, Python"
+        },
+        {
+         "credit": 1.0,
+         "evidence": [
+          "exp1.b1"
+         ],
+         "how": "demonstrated",
+         "skill": "REST APIs"
+        }
+       ],
+       "missing": [],
+       "name": "required_skills",
+       "notes": [],
+       "score": 1.0,
+       "weight": 25.0
+      },
+      "responsibilities": {
+       "evidence": [
+        {
+         "best_bullet": "exp1.b2",
+         "bullet": "Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.",
+         "credit": 0.56,
+         "requirement": "Scale Razorpay's payment infrastructure"
+        },
+        {
+         "best_bullet": "exp1.b1",
+         "bullet": "Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.",
+         "credit": 1.0,
+         "requirement": "Shape REST APIs used by developers worldwide"
+        },
+        {
+         "best_bullet": "exp1.b1",
+         "bullet": "Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.",
+         "credit": 0.56,
+         "requirement": "Drive product and design discussions"
+        }
+       ],
+       "missing": [],
+       "name": "responsibilities",
+       "notes": [],
+       "score": 0.7037037037037037,
+       "weight": 25.0
+      }
+     },
+     "confidence": "high",
+     "confidence_reasons": [
+      "15 requirements extracted from the job description"
+     ],
+     "disclaimer": "Match score from this tool's transparent rubric. It is not the score any employer's applicant tracking system will compute.",
+     "eligibility_failures": [],
+     "keyword_alignment": 55.6,
+     "missing_requirements": [
+      "preferred: Prior experience at a product company",
+      "preferred: Hands-on experience building with LLMs or agentic frameworks"
+     ],
+     "recommended_changes": [],
+     "total": 83.9,
+     "transferable_skills": []
+    }
+   }
+  }
+ ],
+ "summary": {
+  "jobs_discovered": 9,
+  "meets_criteria": 5,
+  "by_status": {
+   "READY_FOR_REVIEW": 5,
+   "SCREENED": 4
+  },
+  "verified_submissions": 0
+ }
+}

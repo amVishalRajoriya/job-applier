@@ -94,6 +94,9 @@ def relevance(job_title: str, description: str, reqs: JobRequirements, profile: 
     return round(0.6 * title_score + 0.4 * skill_score, 3)
 
 
+LIVE_LISTING_SOURCES = {"greenhouse", "lever", "ashby", "workday"}
+
+
 def screen(job: dict, reqs: JobRequirements, profile: Profile, *, relevance_threshold: float = 0.25,
            max_age_days: int = 60, today: date | None = None) -> ScreenResult:
     today = today or date.today()
@@ -113,8 +116,13 @@ def screen(job: dict, reqs: JobRequirements, profile: Profile, *, relevance_thre
         r.expired = True
         r.disqualifiers.append(f"closing date {closing} has passed")
     elif posted and posted < today - timedelta(days=max_age_days):
-        r.expired = True
-        r.disqualifiers.append(f"posted {posted}, older than {max_age_days} days")
+        if set(job.get("sources") or [job.get("source")]) & LIVE_LISTING_SOURCES:
+            # It came from the employer's live ATS listing, so it is still open; many employers keep evergreen
+            # roles posted for years. Flag the age but do not close it.
+            r.warnings.append(f"first posted {posted}, but still listed on the employer's board")
+        else:
+            r.expired = True
+            r.disqualifiers.append(f"posted {posted}, older than {max_age_days} days")
     score = 0
     for rx, weight in FRAUD_PATTERNS:
         m = re.search(rx, desc, re.I)

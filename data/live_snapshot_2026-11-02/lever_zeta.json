@@ -1,0 +1,26 @@
+[
+ {
+  "id": "dad16204-8051-4517-9e50-966f329045b5",
+  "text": "Cloud Network Engineer II",
+  "categories": {
+   "team": "Engineering",
+   "location": "Hyderabad",
+   "commitment": "Full-time"
+  },
+  "workplaceType": "onsite",
+  "createdAt": 1787732026874,
+  "hostedUrl": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5",
+  "applyUrl": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5/apply",
+  "descriptionPlain": "Zeta, a banking technology company, is hiring a Cloud Network Engineer II in Hyderabad, India (onsite) for its Global SRE team.",
+  "lists": [
+   {
+    "text": "Requirements",
+    "content": "<li>Bachelor's or Master's degree in Computer Science or IT</li><li>2-3 years in Cloud Networking, Infrastructure Automation or DevOps</li><li>Hands-on AWS (mandatory), Linux and Terraform</li><li>Kubernetes experience</li><li>Python or Bash scripting for automation</li><li>Cloud networking: DNS, load balancers, VPC, security groups</li><li>CI/CD, Git, Helm</li>"
+   },
+   {
+    "text": "Nice to have",
+    "content": "<li>Amazon EKS experience</li>"
+   }
+  ]
+ }
+]

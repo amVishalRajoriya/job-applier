@@ -1,0 +1,26 @@
+[
+ {
+  "id": "01750a61-a53b-433f-8d8c-bfb5a18417f8",
+  "text": "Data Engineer (SDE 2)",
+  "categories": {
+   "team": "Data",
+   "location": "Bengaluru",
+   "commitment": "Full-time"
+  },
+  "workplaceType": "onsite",
+  "createdAt": 1787294201969,
+  "hostedUrl": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8",
+  "applyUrl": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8/apply",
+  "descriptionPlain": "Fam (previously FamPay), an Indian payments app, is hiring a Data Engineer II to build a scalable data lakehouse with sub-minute latency and unified batch and streaming compute.",
+  "lists": [
+   {
+    "text": "Requirements",
+    "content": "<li>3-5 years in data engineering with distributed and cloud-native systems</li><li>Expert Python, PySpark and SQL</li><li>Hands-on AWS (S3, EKS, MSK) and Infrastructure-as-Code</li><li>Airflow or Temporal experience</li><li>Proficiency with AI coding tools</li><li>Writing technical design documents</li><li>Domain modeling: facts, dimensions, SCDs</li>"
+   },
+   {
+    "text": "Nice to have",
+    "content": "<li>Real-time CDC with Debezium or PeerDB and Kafka</li><li>Iceberg, Delta or Hudi table formats</li><li>Flink ETL/ELT</li><li>Tuning Trino or ClickHouse</li>"
+   }
+  ]
+ }
+]

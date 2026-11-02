@@ -201,13 +201,19 @@ def parse_job(description: str, required_hint: list[str] | None = None,
         reqs.append(Requirement(id=f"r{len(reqs) + 1}", text=text, kind=kind, skills=extract_skills(text), min_years=years))
 
     relevant_text = "\n".join(r.text for r in reqs) or description
+    # A line's level is the lowest degree it names ("Bachelor's or Master's" is satisfied by a bachelor's).
+    # A required line sets the bar; a preferred degree ("Master's a plus") never raises it.
     degree_level, degree_required = 0, False
-    for name, rx in DEGREE_REQ:
-        for r in reqs:
-            if rx.search(r.text) and r.kind != "responsibility":
-                if DEGREE_LEVEL[name] > degree_level:
-                    degree_level = DEGREE_LEVEL[name]
-                    degree_required = r.kind == "required" and not re.search(r"or equivalent (practical )?experience", r.text, re.I)
+    by_kind: dict[str, list[tuple[int, Requirement]]] = {"required": [], "preferred": []}
+    for r in reqs:
+        levels = [DEGREE_LEVEL[name] for name, rx in DEGREE_REQ if rx.search(r.text)]
+        if levels and r.kind in by_kind:
+            by_kind[r.kind].append((min(levels), r))
+    if by_kind["required"]:
+        degree_level, line = max(by_kind["required"], key=lambda x: x[0])
+        degree_required = not re.search(r"or equivalent (practical )?experience", line.text, re.I)
+    elif by_kind["preferred"]:
+        degree_level = max(lv for lv, _ in by_kind["preferred"])
     req_years = [r.min_years for r in reqs if r.min_years is not None and r.kind == "required" and r.min_years <= 25]
     certs = sorted({m.group(1).strip() for m in CERT_PATTERNS.finditer(relevant_text)})
     return JobRequirements(

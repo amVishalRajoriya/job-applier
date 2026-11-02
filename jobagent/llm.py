@@ -142,5 +142,6 @@ def draft_cover_letter(llm: LLM, profile: Profile, doc: ResumeDoc, job: dict, re
         return None, ["model unavailable"]
     letter = out.get("letter", "").strip()
     allowed = f"{job.get('employer')} {job.get('title')}"
-    problems = check_free_text(letter, profile, extra_allowed_text=allowed)
+    problems = check_free_text(letter, profile, extra_allowed_text=allowed,
+                               quoted=(job.get("title") or "", job.get("employer") or ""))
     return (None, problems) if problems else (letter, [])

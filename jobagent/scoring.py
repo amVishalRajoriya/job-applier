@@ -7,6 +7,7 @@ ATS score.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -49,6 +50,19 @@ class ScoreResult:
         d = asdict(self)
         d["categories"] = {k: asdict(v) for k, v in self.categories.items()}
         return d
+
+
+_ALT_CUE = re.compile(r"\b(any one of|one of|any of|either|such as|e\.g\.|like|preferably)\b", re.I)
+_OR_LIST = re.compile(r"[\w+#./-]+(?:\s*,\s*[\w+#./-]+)*,?\s+or\s+[\w+#./-]+", re.I)
+
+
+def alternative_groups(reqs: JobRequirements) -> list[frozenset[str]]:
+    """Required lines that list options ("any one of PHP, Python or Java", "Python, Go or Bash")."""
+    out = []
+    for r in reqs.by_kind("required"):
+        if len(r.skills) >= 2 and (_ALT_CUE.search(r.text) or (_OR_LIST.search(r.text) and " and " not in r.text.lower())):
+            out.append(frozenset(r.skills))
+    return out
 
 
 def skill_credit(skill: str, doc: ResumeDoc, profile: Profile, bullet_skills: dict, listed: set) -> tuple[float, str, Any]:
@@ -108,10 +122,24 @@ def score(doc: ResumeDoc, profile: Profile, reqs: JobRequirements, job_title: st
 
     # ---- required skills ---------------------------------------------------------------
     req_skills = reqs.skills("required") or reqs.skills("responsibility")
+    groups = alternative_groups(reqs)  # "any one of Python, Go or Java": one credit for the best of them
+    standalone = set().union(*(r.skills for r in reqs.by_kind("required") if r.skills not in groups)) \
+        if reqs.skills("required") else req_skills
     c = Category("required_skills", w["required_skills"], None)
     if req_skills:
         credits = []
-        for s in sorted(req_skills):
+        for g in groups:
+            if g & standalone:
+                continue  # some option is required on its own elsewhere; scored below
+            opts = sorted(g)
+            best = max((skill_credit(s, doc, profile, bullet_skills, listed) + (s,) for s in opts), key=lambda x: x[0])
+            credits.append(best[0])
+            label = "one of: " + ", ".join(opts)
+            c.evidence.append({"skill": label, "credit": round(best[0], 2), "how": best[1], "evidence": best[2],
+                               "matched": best[3] if best[1] != "missing" else None})
+            if best[1] == "missing":
+                c.missing.append(label)
+        for s in sorted(standalone & req_skills):
             val, how, ev = skill_credit(s, doc, profile, bullet_skills, listed)
             credits.append(val)
             c.evidence.append({"skill": s, "credit": round(val, 2), "how": how, "evidence": ev})

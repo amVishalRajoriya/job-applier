@@ -1,0 +1,186 @@
+<title>Job Applier Live Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single run report column; funnel strip, then a ledger of jobs that open into detail */
+:root{
+  --bg:#f3f6f7; --surface:#ffffff; --ink:#13212b; --muted:#5a6b76; --line:#d9e1e5;
+  --accent:#0d6f68; --accent-soft:#dcefed; --warn:#9a5b00; --warn-soft:#fbefd9; --bad:#a3322a; --bad-soft:#f8e2df;
+  --real:#1f5fa8; --real-soft:#e1ecf8; --synth:#7a4aa0; --synth-soft:#efe5f6;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f171c; --surface:#16222a; --ink:#e4ecef; --muted:#93a5b0; --line:#273740;
+  --accent:#4cc2b6; --accent-soft:#163a37; --warn:#e7b25c; --warn-soft:#3a2e17; --bad:#ef8a80; --bad-soft:#3d1f1c;
+  --real:#7fb2ec; --real-soft:#1a2c42; --synth:#c79ae6; --synth-soft:#2e2238; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171c; --surface:#16222a; --ink:#e4ecef; --muted:#93a5b0; --line:#273740;
+  --accent:#4cc2b6; --accent-soft:#163a37; --warn:#e7b25c; --warn-soft:#3a2e17; --bad:#ef8a80; --bad-soft:#3d1f1c;
+  --real:#7fb2ec; --real-soft:#1a2c42; --synth:#c79ae6; --synth-soft:#2e2238; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,42px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font:500 12px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.lede{font-size:17px;max-width:68ch;color:var(--ink)}
+.head{display:flex;flex-direction:column;gap:12px}
+.prov{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.pv{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tag{align-self:flex-start;font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 7px;border-radius:4px}
+.t-real{background:var(--real-soft);color:var(--real)} .t-synth{background:var(--synth-soft);color:var(--synth)}
+.t-cond{background:var(--warn-soft);color:var(--warn)} .t-no{background:var(--bad-soft);color:var(--bad)}
+.pv p{font-size:13.5px;color:var(--muted)}
+.funnel{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.st{padding:14px 14px 12px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px;min-width:0}
+.st:last-child{border-right:0}
+.st b{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.st span{font-size:13px;color:var(--muted)}
+.st.stop b{color:var(--bad)}
+@media (max-width:640px){.funnel{grid-template-columns:1fr 1fr}.st{border-bottom:1px solid var(--line)}.st:nth-child(2n){border-right:0}.st:last-child{grid-column:1/-1;border-bottom:0}}
+.section{display:flex;flex-direction:column;gap:14px}
+.section > p{color:var(--muted);max-width:70ch}
+.jobs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+details.job{border-bottom:1px solid var(--line)}
+details.job:last-child{border-bottom:0}
+summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:14px 16px}
+summary::-webkit-details-marker{display:none}
+summary:hover{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.score{font:700 24px/1 var(--display);font-variant-numeric:tabular-nums;text-align:center}
+.score small{display:block;font:400 10px/1.4 var(--mono);color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.score.none{font-size:18px;color:var(--muted)}
+.ttl{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ttl strong{font-weight:600;font-size:15.5px}
+.ttl span{font-size:13px;color:var(--muted)}
+.pill{font:500 12px/1 var(--body);padding:6px 9px;border-radius:999px;white-space:nowrap}
+.p-ready{background:var(--accent-soft);color:var(--accent)} .p-out{background:var(--bad-soft);color:var(--bad)}
+.body{padding:4px 16px 20px 94px;display:flex;flex-direction:column;gap:18px}
+@media (max-width:640px){summary{grid-template-columns:52px 1fr}summary .pill{grid-column:2;justify-self:start}.body{padding-left:16px}}
+.why{background:var(--bad-soft);color:var(--bad);border-radius:6px;padding:10px 12px;font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font:400 12.5px/1.5 var(--mono);color:var(--muted)}
+.bars{display:grid;grid-template-columns:150px 1fr 60px;gap:6px 12px;align-items:center;font-size:13.5px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.num{font-family:var(--mono);font-size:12.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:520px){.bars{grid-template-columns:110px 1fr 48px}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;padding:4px 8px;border-radius:4px;border:1px solid var(--line)}
+.chip.ok{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.chip.gap{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.two > div{min-width:0;display:flex;flex-direction:column;gap:8px}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+pre.letter{white-space:pre-wrap;font:13px/1.6 var(--body);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:0}
+ul.plain{margin:0;padding-left:18px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.li{display:grid;grid-template-columns:220px 1fr;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.li > *{min-width:0}
+.li b{font-weight:600}
+.li p{color:var(--muted);font-size:14px}
+@media (max-width:640px){.li{grid-template-columns:1fr;gap:4px}}
+.need{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:600px){.need{grid-template-columns:1fr}}
+.nd{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.nd p{font-size:14px;color:var(--muted)}
+code{overflow-wrap:anywhere;font:12.5px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+@media (prefers-reduced-motion:no-preference){details.job[open] .body{animation:in .18s ease-out}@keyframes in{from{opacity:.4;transform:translateY(-3px)}to{opacity:1;transform:none}}}
+</style>
+<div class="wrap">
+  <header class="head">
+    <span class="eyebrow">Run of 2 Nov 2026 · Bengaluru backend profile</span>
+    <h1>Job Applier live run</h1>
+    <p class="lede">I pulled 9 live job postings from 6 employers' public job boards and ran them through the agent: find, screen, score, tailor the resume and draft the cover letter. The candidate is still a made-up test profile, because I don't have your resume yet. Nothing was submitted anywhere.</p>
+  </header>
+
+  <section class="section" aria-label="What is real">
+    <div class="prov">
+      <div class="pv"><span class="tag t-real">Real</span><h3>The jobs</h3><p>Employer, title, location, posting date, job ID and link are exactly as published on the Greenhouse and Lever boards on 2 Nov 2026.</p></div>
+      <div class="pv"><span class="tag t-cond">Condensed</span><h3>Job descriptions</h3><p>My web reader returns a faithful summary of each requirement list, not the raw text. Skills, years and degrees were kept; wording is shortened.</p></div>
+      <div class="pv"><span class="tag t-synth">Synthetic</span><h3>The candidate</h3><p>"Asha Testcandidate", an 8-year Python backend engineer in fintech in Bengaluru. Your resume replaces this.</p></div>
+      <div class="pv"><span class="tag t-no">Not run here</span><h3>Opening the apply forms</h3><p>This cloud machine can't reach job sites directly, so the form check and submission steps must run on your computer.</p></div>
+    </div>
+  </section>
+
+  <section class="section" aria-label="Pipeline">
+    <h2>What the agent did</h2>
+    <div class="funnel">
+      <div class="st"><span class="eyebrow">Found</span><b>9</b><span>from 6 boards</span></div>
+      <div class="st"><span class="eyebrow">Passed screening</span><b>5</b><span>4 ruled out, with reasons</span></div>
+      <div class="st"><span class="eyebrow">Scored</span><b>5</b><span>rubric, 0 to 100</span></div>
+      <div class="st"><span class="eyebrow">Ready for review</span><b>5</b><span>resume + letter drafted</span></div>
+      <div class="st stop"><span class="eyebrow">Submitted</span><b>0</b><span>needs your approval</span></div>
+    </div>
+  </section>
+
+  <section class="section" aria-label="Jobs">
+    <h2>The 9 jobs, best match first</h2>
+    <p>Open a job to see why it passed or was ruled out, how the score was built, what the agent changed in the resume, and the cover letter it drafted. Every line in the letter comes from the candidate's own resume.</p>
+    <div class="jobs" id="jobs"></div>
+  </section>
+
+  <section class="section" aria-label="Fixes">
+    <h2>What real postings taught the agent</h2>
+    <p>The test portal never produced these cases. Real postings did, so I fixed each one and added a test for it.</p>
+    <div class="list">
+      <div class="li"><b>Old but still open</b><p>Databricks and Stripe keep some roles listed for two years. The agent closed anything first posted over 60 days ago. Now a job that is still on the employer's own board stays open, with a note about its age.</p></div>
+      <div class="li"><b>"Any one of" skills</b><p>Razorpay asks for "any one of PHP, Python, Golang, Java or C++". The agent counted the five you don't need as gaps. Now Python alone satisfies it, and the score went from 70 to 84.</p></div>
+      <div class="li"><b>Preferred degree read as required</b><p>"Master's degree" under nice-to-have was treated as the minimum, and "Bachelor's or Master's" demanded a master's. Both now mean a bachelor's is enough.</p></div>
+      <div class="li"><b>"Contracts" read as a contract job</b><p>Stripe's AR Analyst post mentions billing contracts, and the agent marked it a contract role. It now needs a phrase like "contract role" or "contractor".</p></div>
+      <div class="li"><b>Cover letter blocked by a job title</b><p>For "Lead Security Engineer" the fact checker thought the letter claimed leadership and security skills. Naming the role you're applying for no longer counts as a claim.</p></div>
+    </div>
+  </section>
+
+  <section class="section" aria-label="What I need">
+    <h2>To make it fully real, I need</h2>
+    <div class="need">
+      <div class="nd"><h3>Your resume</h3><p>PDF or DOCX, uploaded to this project. It stays in the project folder only and is stored encrypted by the agent.</p></div>
+      <div class="nd"><h3>Your details file</h3><p>Work authorization by country, expected salary, notice period, relocation, target roles and cities, and your level in each key skill. The template is <code>jobagent/my_details_template.yaml</code>.</p></div>
+      <div class="nd"><h3>The boards to watch</h3><p>Company Greenhouse or Lever pages you'd apply to, such as <code>job-boards.greenhouse.io/razorpaysoftwareprivatelimited</code>. Say if any employer should be excluded.</p></div>
+      <div class="nd"><h3>Where to run it</h3><p>Run <code>./start.sh</code> on your computer to reach job sites, or add a cloud environment that allows greenhouse.io and lever.co.</p></div>
+    </div>
+  </section>
+</div>
+<script>
+const JOBS = [{"id": 1, "title": "Senior Software Development Engineer", "employer": "Razorpay", "location": "Bengaluru", "remote": null, "source": "greenhouse", "url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005", "posted": "2026-10-30", "status": "READY_FOR_REVIEW", "relevance": 0.822, "disq": [], "warn": [], "score": 83.9, "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746983005", "cats": [{"name": "domain", "score": 1.0, "weight": 10.0, "missing": [], "notes": []}, {"name": "education", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "experience", "score": 1.0, "weight": 20.0, "missing": [], "notes": ["8.5 relevant years vs 3+ requested"]}, {"name": "preferred", "score": 0.2925925925925926, "weight": 10.0, "missing": ["Prior experience at a product company", "Hands-on experience building with LLMs or agentic frameworks"], "notes": []}, {"name": "required_skills", "score": 1.0, "weight": 25.0, "missing": [], "notes": []}, {"name": "responsibilities", "score": 0.7037037037037037, "weight": 25.0, "missing": [], "notes": []}], "skills": [{"skill": "one of: C++, Django, Go, Java, PHP, Python", "how": "demonstrated", "matched": "Django"}, {"skill": "REST APIs", "how": "demonstrated", "matched": null}], "missing": ["preferred: Prior experience at a product company", "preferred: Hands-on experience building with LLMs or agentic frameworks"], "changes": [{"kind": "reorder_bullets", "target": "exp1", "reason": "most relevant evidence first", "after": "exp1.b1, exp1.b3, exp1.b4, exp1.b2"}, {"kind": "reorder_bullets", "target": "exp3", "reason": "most relevant evidence first", "after": "exp3.b2, exp3.b1"}, {"kind": "reorder_skills", "target": "skills", "reason": "requested skills first", "after": "Python, Django, REST APIs, Java, Flask, SQL, PostgreSQL, Redis, AWS, Docker, Unit Testing, Agile"}], "letter": "I am applying for the Senior Software Development Engineer role at Razorpay. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience in fintech.\n\nExperience from my resume that is most relevant to this role:\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Mentored 3 junior engineers and ran weekly code reviews.\n- Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate"}, {"id": 2, "title": "Lead Security Engineer", "employer": "Razorpay", "location": "Bengaluru", "remote": null, "source": "greenhouse", "url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005", "posted": "2026-10-27", "status": "READY_FOR_REVIEW", "relevance": 0.733, "disq": [], "warn": [], "score": 65.4, "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4746948005", "cats": [{"name": "domain", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "education", "score": 1.0, "weight": 10.0, "missing": [], "notes": []}, {"name": "experience", "score": 1.0, "weight": 20.0, "missing": [], "notes": ["8.5 relevant years vs 5+ requested"]}, {"name": "preferred", "score": 0.0, "weight": 10.0, "missing": ["Semgrep experience", "Master's degree"], "notes": []}, {"name": "required_skills", "score": 0.5, "weight": 25.0, "missing": ["Microservices"], "notes": []}, {"name": "responsibilities", "score": null, "weight": 25.0, "missing": [], "notes": []}], "skills": [{"skill": "one of: Go, Python", "how": "demonstrated", "matched": "Python"}, {"skill": "Microservices", "how": "missing", "matched": null}], "missing": ["skill: Microservices", "preferred: Semgrep experience", "preferred: Master's degree"], "changes": [{"kind": "reorder_bullets", "target": "exp1", "reason": "most relevant evidence first", "after": "exp1.b3, exp1.b1, exp1.b2, exp1.b4"}], "letter": "I am applying for the Lead Security Engineer role at Razorpay. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience.\n\nExperience from my resume that is most relevant to this role:\n- Mentored 3 junior engineers and ran weekly code reviews.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Built loan eligibility services in Python and Flask processing 50,000 applications per month.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate"}, {"id": 7, "title": "Data Engineer (SDE 2)", "employer": "Fam (FamPay)", "location": "Bengaluru", "remote": "onsite", "source": "lever", "url": "https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8", "posted": "2026-08-21", "status": "READY_FOR_REVIEW", "relevance": 0.67, "disq": [], "warn": ["first posted 2026-08-21, but still listed on the employer's board"], "score": 64.4, "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://jobs.lever.co/fampay/01750a61-a53b-433f-8d8c-bfb5a18417f8/apply", "cats": [{"name": "domain", "score": 1.0, "weight": 10.0, "missing": [], "notes": []}, {"name": "education", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "experience", "score": 1.0, "weight": 20.0, "missing": [], "notes": ["8.5 relevant years vs 3+ requested"]}, {"name": "preferred", "score": 0.0, "weight": 10.0, "missing": ["Real-time CDC with Debezium or PeerDB and Kafka", "Iceberg, Delta or Hudi table formats", "Flink ETL/ELT", "Tuning Trino or ClickHouse"], "notes": []}, {"name": "required_skills", "score": 0.47500000000000003, "weight": 25.0, "missing": ["Airflow", "Kubernetes", "Spark"], "notes": []}, {"name": "responsibilities", "score": null, "weight": 25.0, "missing": [], "notes": []}], "skills": [{"skill": "AWS", "how": "demonstrated", "matched": null}, {"skill": "Airflow", "how": "missing", "matched": null}, {"skill": "Kubernetes", "how": "missing", "matched": null}, {"skill": "Python", "how": "demonstrated", "matched": null}, {"skill": "SQL", "how": "demonstrated", "matched": null}, {"skill": "Spark", "how": "missing", "matched": null}], "missing": ["skill: Airflow", "skill: Kubernetes", "skill: Spark", "preferred: Real-time CDC with Debezium or PeerDB and Kafka", "preferred: Iceberg, Delta or Hudi table formats", "preferred: Flink ETL/ELT", "preferred: Tuning Trino or ClickHouse"], "changes": [{"kind": "reorder_bullets", "target": "exp1", "reason": "most relevant evidence first", "after": "exp1.b1, exp1.b4, exp1.b2, exp1.b3"}, {"kind": "reorder_skills", "target": "skills", "reason": "requested skills first", "after": "Python, SQL, AWS, Django, Flask, PostgreSQL, Redis, Docker, REST APIs, Unit Testing, Agile, Java"}], "letter": "I am applying for the Data Engineer (SDE 2) role at Fam (FamPay). I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience in payments.\n\nExperience from my resume that is most relevant to this role:\n- Maintained internal reporting dashboards using SQL and Excel.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Mentored 3 junior engineers and ran weekly code reviews.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate"}, {"id": 8, "title": "cloud security engineer", "employer": "CRED", "location": "bengaluru", "remote": "onsite", "source": "lever", "url": "https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c", "posted": "2026-01-29", "status": "READY_FOR_REVIEW", "relevance": 0.745, "disq": [], "warn": ["first posted 2026-01-29, but still listed on the employer's board"], "score": 58.6, "blocker": "could not inspect the application form: navigation error: Page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://jobs.lever.co/cred/9a746e68-0858-4190-9144-54b19a2cbf2c/apply", "cats": [{"name": "domain", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "education", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "experience", "score": 0.7666666666666667, "weight": 20.0, "missing": [], "notes": ["8.5 relevant years vs 2+ requested"]}, {"name": "preferred", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "required_skills", "score": 0.44166666666666665, "weight": 25.0, "missing": ["Linux", "Microservices", "Security"], "notes": []}, {"name": "responsibilities", "score": null, "weight": 25.0, "missing": [], "notes": []}], "skills": [{"skill": "one of: Bash, Go, Python", "how": "demonstrated", "matched": "Python"}, {"skill": "CI/CD", "how": "demonstrated", "matched": null}, {"skill": "Docker", "how": "demonstrated", "matched": null}, {"skill": "Linux", "how": "missing", "matched": null}, {"skill": "Microservices", "how": "missing", "matched": null}, {"skill": "Security", "how": "missing", "matched": null}], "missing": ["skill: Linux", "skill: Microservices", "skill: Security"], "changes": [{"kind": "reorder_bullets", "target": "exp1", "reason": "most relevant evidence first", "after": "exp1.b4, exp1.b1, exp1.b2, exp1.b3"}, {"kind": "reorder_skills", "target": "skills", "reason": "requested skills first", "after": "Python, AWS, Docker, Django, Flask, SQL, PostgreSQL, Redis, REST APIs, Unit Testing, Agile, Java"}], "letter": "I am applying for the cloud security engineer role at CRED. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience.\n\nExperience from my resume that is most relevant to this role:\n- Migrated services to Docker containers deployed on AWS ECS with GitHub Actions pipelines.\n- Built loan eligibility services in Python and Flask processing 50,000 applications per month.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate"}, {"id": 6, "title": "Engineering Manager - Backend", "employer": "Databricks", "location": "Bengaluru, India", "remote": "remote", "source": "greenhouse", "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7439442002", "posted": "2024-05-07", "status": "READY_FOR_REVIEW", "relevance": 0.6, "disq": [], "warn": ["first posted 2024-05-07, but still listed on the employer's board"], "score": 42.5, "blocker": "no automated adapter for this site: apply manually", "cats": [{"name": "domain", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "education", "score": 1.0, "weight": 10.0, "missing": [], "notes": []}, {"name": "experience", "score": 0.6691666666666667, "weight": 20.0, "missing": ["10+ years of experience (resume shows 8.5)"], "notes": ["8.5 relevant years vs 10+ requested"]}, {"name": "preferred", "score": null, "weight": 10.0, "missing": [], "notes": []}, {"name": "required_skills", "score": 0.0, "weight": 25.0, "missing": ["System Design"], "notes": []}, {"name": "responsibilities", "score": null, "weight": 25.0, "missing": [], "notes": []}], "skills": [{"skill": "System Design", "how": "missing", "matched": null}], "missing": ["skill: System Design", "experience: 10+ years of experience (resume shows 8.5)"], "changes": [{"kind": "summary", "target": "summary", "reason": "summary restated from verified facts relevant to the job", "after": "Senior Software Engineer with 8 years of experience."}, {"kind": "reorder_bullets", "target": "exp1", "reason": "most relevant evidence first", "after": "exp1.b3, exp1.b1, exp1.b2, exp1.b4"}], "letter": "I am applying for the Engineering Manager - Backend role at Databricks. I am a Senior Software Engineer at Paywise Technologies (synthetic) with 8 years of experience.\n\nExperience from my resume that is most relevant to this role:\n- Mentored 3 junior engineers and ran weekly code reviews.\n- Designed and built REST APIs in Django for merchant onboarding used by 12,000 merchants.\n- Reduced payment reconciliation time by 35% by rewriting batch jobs with PostgreSQL window functions.\n\nThank you for considering my application. I would welcome the chance to discuss the role.\n\nAsha Testcandidate"}, {"id": 9, "title": "Cloud Network Engineer II", "employer": "Zeta", "location": "Hyderabad", "remote": "onsite", "source": "lever", "url": "https://jobs.lever.co/zeta/dad16204-8051-4517-9e50-966f329045b5", "posted": "2026-08-26", "status": "SCREENED", "relevance": 0.822, "disq": ["location Hyderabad is outside preferred locations and candidate will not relocate"], "warn": ["first posted 2026-08-26, but still listed on the employer's board"], "score": null, "blocker": null}, {"id": 5, "title": "AR Analyst", "employer": "Stripe", "location": "Bangalore", "remote": null, "source": "greenhouse", "url": "https://stripe.com/jobs/search?gh_jid=8247127", "posted": "2026-10-09", "status": "SCREENED", "relevance": 0.0, "disq": ["not relevant to target roles (relevance 0.00)"], "warn": [], "score": null, "blocker": null}, {"id": 4, "title": "Backend Engineer, Core Technology", "employer": "Stripe", "location": "US-Remote, Chicago, Seattle, San Francisco", "remote": "remote", "source": "greenhouse", "url": "https://stripe.com/jobs/search?gh_jid=6042172", "posted": "2024-06-14", "status": "SCREENED", "relevance": 0.733, "disq": ["remote role restricted to US, where the candidate is not authorized to work"], "warn": ["first posted 2024-06-14, but still listed on the employer's board"], "score": null, "blocker": null}, {"id": 3, "title": "DevOps Enginer", "employer": "Razorpay", "location": "Malaysia", "remote": null, "source": "greenhouse", "url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited/jobs/4730552005", "posted": "2026-09-03", "status": "SCREENED", "relevance": 0.62, "disq": ["location Malaysia is outside preferred locations and candidate will not relocate"], "warn": [], "score": null, "blocker": null}];
+const CAT = {required_skills:"Required skills",responsibilities:"Responsibilities",experience:"Experience",preferred:"Nice-to-haves",domain:"Industry",education:"Education"};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtDate = d => d ? new Date(d+"T00:00:00Z").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}) : "";
+function blockerText(b){
+  if(!b) return "";
+  if(/ERR_TUNNEL|navigation error/.test(b)) return "Form check skipped: this cloud machine can't open the employer's site. On your computer the agent opens the form here and lists every field before you approve.";
+  if(/no automated adapter/.test(b)) return "This employer's apply page isn't a supported form, so the agent prepares everything and you apply yourself.";
+  return b;
+}
+function render(j){
+  const ready = j.status === "READY_FOR_REVIEW";
+  const src = j.source === "lever" ? "Lever" : "Greenhouse";
+  let h = `<details class="job"${j.id===1?" open":""}><summary>
+    <div class="score${j.score==null?" none":""}">${j.score==null?"–":Math.round(j.score)}<small>${j.score==null?"not scored":"match"}</small></div>
+    <div class="ttl"><strong>${esc(j.title)}</strong><span>${esc(j.employer)} · ${esc(j.location)}</span></div>
+    <span class="pill ${ready?"p-ready":"p-out"}">${ready?"Ready for your review":"Ruled out"}</span></summary><div class="body">`;
+  h += `<div class="meta"><span>${src} job ${esc(String(j.url).match(/[\w-]{7,}$/)?.[0]||"")}</span><span>first posted ${fmtDate(j.posted)}</span><a href="${esc(j.url)}" target="_blank" rel="noopener">Open the real posting ↗</a></div>`;
+  if(!ready){
+    h += `<div class="why"><strong>Why it was ruled out:</strong> ${esc(j.disq.join("; "))}.</div>`;
+    if(j.warn.length) h += `<p class="note">${esc(j.warn.join("; "))}.</p>`;
+    return h + `</div></details>`;
+  }
+  if(j.warn.length) h += `<p class="note">Note: ${esc(j.warn.join("; "))}.</p>`;
+  h += `<div class="bars">` + j.cats.filter(c=>c.score!=null).map(c=>`<span>${CAT[c.name]||c.name}</span><div class="bar"><i style="width:${Math.round(c.score*100)}%"></i></div><span class="num">${Math.round(c.score*100)}% ×${c.weight}</span>`).join("") + `</div>`;
+  const ok = j.skills.filter(s=>s.how!=="missing").map(s=>`<span class="chip ok">${esc(s.matched? s.skill.replace("one of: ","one of ")+" → "+s.matched : s.skill)}</span>`);
+  const gaps = (j.missing||[]).map(m=>`<span class="chip gap">${esc(m.replace(/^skill: /,"").replace(/^preferred: /,"nice-to-have: "))}</span>`);
+  h += `<div class="two"><div><h3>Matched</h3><div class="chips">${ok.join("")||'<span class="note">none</span>'}</div></div><div><h3>Gaps (left out, never invented)</h3><div class="chips">${gaps.join("")||'<span class="note">none</span>'}</div></div></div>`;
+  const ch = (j.changes||[]).map(c=> c.kind==="reorder_skills" ? `Skills list reordered so the ones this job asks for come first: ${esc(c.after)}` : c.kind==="reorder_bullets" ? `Bullets in role ${esc(c.target)} reordered, most relevant first` : `${esc(c.kind)} ${esc(c.target)}: ${esc(c.reason)}`);
+  h += `<div class="two"><div><h3>Resume changes</h3><ul class="plain">${ch.map(x=>`<li>${x}</li>`).join("")||"<li>No changes needed</li>"}</ul><p class="note">${esc(blockerText(j.blocker))}</p></div><div><h3>Cover letter draft</h3><pre class="letter">${esc(j.letter)}</pre></div></div>`;
+  return h + `</div></details>`;
+}
+document.getElementById("jobs").innerHTML = JOBS.map(render).join("");
+</script>

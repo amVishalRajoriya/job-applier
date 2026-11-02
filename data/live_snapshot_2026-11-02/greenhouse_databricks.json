@@ -1,0 +1,19 @@
+{
+ "jobs": [
+  {
+   "id": 7439442002,
+   "title": "Engineering Manager - Backend",
+   "location": {
+    "name": "Bengaluru, India"
+   },
+   "updated_at": "2026-10-11T08:47:24-04:00",
+   "first_published": "2024-05-07T03:11:26-04:00",
+   "absolute_url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7439442002",
+   "content": "<h3>About the role</h3><p>One of the first backend engineering managers on the Databricks India team in Bengaluru, building infrastructure for resource management and cloud-agnostic services.</p><h3>Requirements</h3><ul><li>10+ years of experience with large-scale distributed systems</li><li>Extensive experience as a software engineering leader building teams from the ground up</li><li>Experience managing a team of strong software engineers</li><li>BS or higher in Computer Science or a related field</li></ul>",
+   "company_name": "Databricks"
+  }
+ ],
+ "meta": {
+  "total": 1
+ }
+}

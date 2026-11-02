@@ -155,8 +155,15 @@ def profile_text(profile: Profile) -> str:
 
 
 def check_free_text(text: str, profile: Profile, extra_numbers: set[str] | None = None,
-                    extra_allowed_text: str = "") -> list[str]:
-    """Rules for free text (summary, cover letter): every number, skill and named entity must exist in the profile."""
+                    extra_allowed_text: str = "", quoted: tuple[str, ...] = ()) -> list[str]:
+    """Rules for free text (summary, cover letter): every number, skill and named entity must exist in the profile.
+
+    `quoted` holds exact phrases that only name something, such as the job title and employer in
+    "I am applying for the Lead Security Engineer role at Razorpay". They are removed before checking,
+    because naming the role is not a claim about the candidate.
+    """
+    for phrase in sorted((q for q in quoted if q), key=len, reverse=True):
+        text = re.sub(re.escape(phrase), " ", text, flags=re.I)
     ptext = profile_text(profile)
     years = profile.total_months() // 12
     allowed_nums = numbers_in(ptext) | {str(years), str(years + 1)} | (extra_numbers or set())

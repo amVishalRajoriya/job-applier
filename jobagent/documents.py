@@ -162,7 +162,8 @@ def template_cover_letter(profile: Profile, doc: ResumeDoc, job: dict, reqs: Job
     middle = "Experience from my resume that is most relevant to this role:\n" + "\n".join(f"- {b.text}" for b in top)
     close = "Thank you for considering my application. I would welcome the chance to discuss the role."
     letter = f"{intro}\n\n{middle}\n\n{close}\n\n{profile.contact.name}"
-    problems = check_free_text(letter, profile, extra_allowed_text=f"{job['employer']} {job['title']}")
+    problems = check_free_text(letter, profile, extra_allowed_text=f"{job['employer']} {job['title']}",
+                               quoted=(job["title"], job["employer"]))
     if problems:  # should not happen: every line is verified evidence
         raise ValueError("cover letter failed truth guard: " + "; ".join(problems))
     return letter
