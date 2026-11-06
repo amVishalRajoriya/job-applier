@@ -9,7 +9,7 @@ from .apply import engine
 from .apply.adapters import ApplyError, FatalError, NeedsHuman, TransientError
 from .apply.policy import blocking_answers, capability_for
 from .config import Settings
-from .db import Database, dumps, loads, now
+from .db import RECOVERABLE, Database, dumps, loads, now
 from .documents import template_cover_letter, write_version
 from .filtering import screen
 from .http import PoliteClient
@@ -78,42 +78,70 @@ def _master_version(db: Database, settings: Settings, profile: Profile) -> tuple
 
 
 def screen_and_score(db: Database, settings: Settings, profile: Profile, job_ids: list[int] | None = None) -> dict:
-    rows = db.q("SELECT * FROM jobs WHERE status='DISCOVERED'" if job_ids is None else
+    # New jobs, plus jobs whose preparation failed or stopped part-way and that have no application yet
+    stuck = ",".join(f"'{s}'" for s in RECOVERABLE)
+    rows = db.q("SELECT * FROM jobs WHERE status='DISCOVERED' OR (id NOT IN (SELECT job_id FROM applications) AND "
+                f"(status IN ({stuck}) OR (status='SCREENED' AND json_extract(screen_result, '$.passed') = 1))) "
+                "ORDER BY id" if job_ids is None else
                 f"SELECT * FROM jobs WHERE id IN ({','.join('?' * len(job_ids))})", tuple(job_ids or ()))
     master_id, master = _master_version(db, settings, profile)
     stats = {"screened": 0, "passed": 0, "scored": 0, "optimized": 0, "ready": 0, "closed": 0, "errors": []}
     llm = get_llm(settings)
     for job in rows:
-        if job["status"] != "DISCOVERED":
+        retry = job["status"] != "DISCOVERED"
+        if retry and (job["status"] not in (*RECOVERABLE, "SCREENED") or db.application(job["id"]) is not None
+                      or (job["status"] == "SCREENED" and not loads(job["screen_result"], {}).get("passed"))):
             continue
-        reqs = job_reqs(job)
-        jd = dict(job)
-        jd["sources"] = [r["source"] for r in db.q("SELECT source FROM job_sources WHERE job_id=?", (job["id"],))]
-        res = screen(jd, reqs, profile, relevance_threshold=settings.relevance_threshold,
-                     max_age_days=settings.max_job_age_days)
-        flags = []
-        if res.fraud_signals:
-            flags.append("possible_fraud")
-        if res.injection:
-            flags.append("prompt_injection_text")
-        if res.expired:
-            flags.append("expired")
-        db.update_job(job["id"], screen_result=res.to_dict(), flags=flags)
-        db.set_status(job["id"], "SCREENED", "screening", "passed" if res.passed else "; ".join(res.disqualifiers))
-        stats["screened"] += 1
-        if res.expired:
-            db.set_status(job["id"], "CLOSED", "screening", "expired listing")
-            stats["closed"] += 1
-            continue
-        if not res.passed:
-            continue
-        stats["passed"] += 1
         try:
-            _score_and_prepare(db, settings, profile, db.job(job["id"]), reqs, master_id, master, llm if not res.injection else None, stats)
+            _screen_one(db, settings, profile, job, retry, master_id, master, llm, stats)
         except TruthViolation as e:
             stats["errors"].append({"job": job["id"], "error": str(e)})
             db.audit("optimizer", "truth_guard_blocked", "job", job["id"], violations=[str(v) for v in e.violations])
+            _preparation_failed(db, job["id"], f"truth guard blocked the tailored resume: {e}")
+        except Exception as e:  # one bad job must not stop the batch or strand the job
+            err = f"{type(e).__name__}: {e}"
+            stats["errors"].append({"job": job["id"], "error": err})
+            db.audit("pipeline", "preparation_error", "job", job["id"], error=err)
+            _preparation_failed(db, job["id"], err)
     return stats
+
+
+def _screen_one(db, settings, profile, job, retry, master_id, master, llm, stats) -> None:
+    reqs = job_reqs(job)
+    jd = dict(job)
+    src_rows = db.q("SELECT source, raw FROM job_sources WHERE job_id=?", (job["id"],))
+    jd["sources"] = [r["source"] for r in src_rows]
+    raws = [loads(r["raw"], {}) or {} for r in src_rows]
+    for k in ("salary_from_text", "employment_type_from_text"):
+        jd[k] = any(x.get(k) for x in raws)
+    res = screen(jd, reqs, profile, relevance_threshold=settings.relevance_threshold,
+                 max_age_days=settings.max_job_age_days)
+    flags = []
+    if res.fraud_signals:
+        flags.append("possible_fraud")
+    if res.injection:
+        flags.append("prompt_injection_text")
+    if res.expired:
+        flags.append("expired")
+    db.update_job(job["id"], screen_result=res.to_dict(), flags=flags)
+    db.set_status(job["id"], "SCREENED", "screening", "passed" if res.passed else "; ".join(res.disqualifiers),
+                  force=retry and job["status"] != "PREPARATION_FAILED")
+    stats["screened"] += 1
+    if res.expired:
+        db.set_status(job["id"], "CLOSED", "screening", "expired listing")
+        stats["closed"] += 1
+        return
+    if not res.passed:
+        return
+    stats["passed"] += 1
+    _score_and_prepare(db, settings, profile, db.job(job["id"]), reqs, master_id, master,
+                       llm if not res.injection else None, stats)
+
+
+def _preparation_failed(db: Database, job_id: int, reason: str) -> None:
+    """Park a job whose preparation failed where the next run retries it (unless it was closed meanwhile)."""
+    if db.job(job_id)["status"] in ("SCREENED", "SCORED", "OPTIMIZATION_REQUIRED", "OPTIMIZED"):
+        db.set_status(job_id, "PREPARATION_FAILED", "pipeline", reason[:500])
 
 
 def _score_and_prepare(db, settings, profile, job, reqs, master_id, master, llm, stats) -> None:

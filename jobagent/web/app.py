@@ -14,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 from .. import onboarding, pipeline, report
 from .. import profile as P
 from ..config import Settings
-from ..db import STATUSES, Database, loads
+from ..db import STATUSES, Database, InvalidTransition, loads
 from .tasks import ACTIONS, Runner
 
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -125,6 +125,8 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         check_csrf(csrf_token)
         if settings.mode != "review":
             raise HTTPException(400, "switch to review mode on the Run page to submit applications you approved")
+        if db.job(job_id) is None:
+            raise HTTPException(404, "job not found")
         if db.job(job_id)["status"] != "APPROVED":
             raise HTTPException(400, "approve this application first")
         t, err = start("apply", job_id)
@@ -203,6 +205,10 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
     def tracking(job_id: int, status: str = Form(""), follow_up_date: str = Form(""), recruiter_response: str = Form(""),
                  csrf_token: str = Form("")):
         check_csrf(csrf_token)
+        if db.job(job_id) is None:
+            raise HTTPException(404, "job not found")
+        if status and status not in MANUAL_STATUSES:
+            raise HTTPException(400, "invalid status")
         fields = {}
         if follow_up_date:
             fields["follow_up_date"] = follow_up_date
@@ -212,9 +218,13 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
         if fields:
             db.audit("candidate (dashboard)", "tracking_updated", "job", job_id, **fields)
         if status:
-            if status not in MANUAL_STATUSES:
-                raise HTTPException(400, "invalid status")
-            db.set_status(job_id, status, "candidate (dashboard)", recruiter_response or "updated from dashboard")
+            try:
+                db.set_status(job_id, status, "candidate (dashboard)", recruiter_response or "updated from dashboard")
+            except InvalidTransition:
+                cur = db.job(job_id)["status"]
+                hint = (" Mark the application as submitted first." if status in ("INTERVIEW", "OFFER") else "")
+                return RedirectResponse(f"/jobs/{job_id}?err=" + quote(f"Cannot move this job from {cur} to {status}.{hint}"),
+                                        status_code=303)
         return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
     @app.get("/files/{job_id}/{kind}")

@@ -284,10 +284,18 @@ def apply_form(job_id: int, request: Request, variant: str = ""):
                if job["scenario"] == "captcha" else "")
     body = (f"<h1 class='app-title'>{html.escape(title)}</h1><div class='company-name'>at {html.escape(employer)}</div>"
             f"<div class='location'>{html.escape(job['location'])}</div>"
-            f"<form id='application-form' method='post' enctype='multipart/form-data' action='/apply/{job_id}'>"
+            f"<form id='application-form' method='post' enctype='multipart/form-data' "
+            f"action='/apply/{job_id}{('?variant=' + variant) if variant else ''}'>"
             + "".join(form_fields(job)) + captcha
             + ("<button type='submit' id='next'>Next</button></form>" if variant == "wizard" else
                "<button type='submit' id='submit_app'>Submit Application</button></form>"))
+    if variant == "fetch":
+        # submits by fetch() and renders the confirmation in place, with no page navigation (newer hosted ATS forms)
+        body += ("<script>document.getElementById('application-form').addEventListener('submit', async (ev) => {"
+                 "ev.preventDefault(); const f = ev.target;"
+                 "const r = await fetch(f.action, {method: 'POST', body: new FormData(f)});"
+                 "const doc = new DOMParser().parseFromString(await r.text(), 'text/html');"
+                 "document.body.innerHTML = doc.body.innerHTML; });</script>")
     if variant == "autosave":
         # a script that sends form data in the background, the way some portals autosave drafts
         body += ("<script>setTimeout(() => fetch('/_admin/beacon', {method: 'POST', body: 'draft'}), 50);"
@@ -324,6 +332,9 @@ async def apply_submit(job_id: int, request: Request):
         submissions.append({"job_id": job_id, "ref": ref, "email": data["email"], "fields": data, "sizes": sizes})
     if job["scenario"] == "ambiguous":
         return HTMLResponse(page("Thanks", "<p>Thanks!</p>"))
+    if request.query_params.get("variant") == "thanks_offsite":
+        # the employer sends applicants to a thank-you page on its own (unapproved) site after a successful post
+        return RedirectResponse("http://employer-thanks.invalid/thank-you", status_code=303)
     return RedirectResponse(f"/apply/{job_id}/confirmation/{ref}", status_code=303)
 
 

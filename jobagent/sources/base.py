@@ -150,7 +150,18 @@ def infer_remote_policy(*texts: str | None) -> str | None:
 
 _EMP_TYPES = {"full-time": r"full[-_ ]?time|permanent|fulltime",
               "part-time": r"part[-_ ]?time", "contract": r"^\s*contract\s*$|\bcontract(ual)?\s+(role|position|basis|job|to hire|employee)|\bcontractors?\b|freelance|\btemporary\b|\btemp\b|fixed[- ]term",
-              "internship": r"intern(ship)?"}
+              "internship": r"\binterns?(hips?)?\b"}
+
+
+def text_inferred(salary: bool = False, employment_type: bool = False) -> dict[str, bool]:
+    """raw-dict markers for values guessed from free text (description, alert snippet) rather than a structured
+    field. Screening only warns on these instead of hard-rejecting, because free-text guesses can be wrong."""
+    out = {}
+    if salary:
+        out["salary_from_text"] = True
+    if employment_type:
+        out["employment_type_from_text"] = True
+    return out
 
 
 def normalize_employment_type(text: str | None) -> str | None:
@@ -162,8 +173,10 @@ def normalize_employment_type(text: str | None) -> str | None:
     return None
 
 
-_SAL = re.compile(r"(?P<cur>[$€£₹]|usd|eur|gbp|inr)?\s?(?P<a>\d[\d,.]*)\s?(?P<ka>k|lpa|l)?\s*(?:-|–|to)\s*"
-                  r"(?P<cur2>[$€£₹]|usd|eur|gbp|inr)?\s?(?P<b>\d[\d,.]*)\s?(?P<kb>k|lpa|l)?", re.I)
+_UNIT = r"(?:k|lpa|lakhs?|lacs?|l)(?![a-z])"
+_CURTOK = r"[$€£₹]|\b(?:usd|eur|gbp|inr)\b"
+_SAL = re.compile(rf"(?P<cur>{_CURTOK})?\s?(?P<a>\d[\d,.]*)\s?(?P<ka>{_UNIT})?\s*(?:-|–|to)\s*"
+                  rf"(?P<cur2>{_CURTOK})?\s?(?P<b>\d[\d,.]*)\s?(?P<kb>{_UNIT})?(?:\s?(?P<cur3>{_CURTOK}))?", re.I)
 _CUR = {"$": "USD", "usd": "USD", "€": "EUR", "eur": "EUR", "£": "GBP", "gbp": "GBP", "₹": "INR", "inr": "INR"}
 
 
@@ -172,9 +185,10 @@ def parse_salary(text: str | None) -> tuple[float | None, float | None, str | No
     if not text:
         return None, None, None
     for m in _SAL.finditer(text):
-        cur = m.group("cur") or m.group("cur2")
+        cur = m.group("cur") or m.group("cur2") or m.group("cur3")
         unit = (m.group("ka") or m.group("kb") or "").lower()
-        if not cur and unit not in ("lpa", "l"):
+        unit = "l" if unit != "k" and unit else unit  # lpa, lakh(s), lac(s), l
+        if not cur and unit != "l":
             continue
         def num(s: str) -> float:
             return float(s.replace(",", ""))
@@ -182,7 +196,7 @@ def parse_salary(text: str | None) -> tuple[float | None, float | None, str | No
             a, b = num(m.group("a")), num(m.group("b"))
         except ValueError:
             continue
-        mult = 1000 if unit == "k" else 100000 if unit in ("lpa", "l") else 1
-        currency = _CUR.get((cur or "").lower(), "INR" if unit in ("lpa", "l") else None)
+        mult = 1000 if unit == "k" else 100000 if unit == "l" else 1
+        currency = _CUR.get((cur or "").lower(), "INR" if unit == "l" else None)
         return a * mult, b * mult, currency
     return None, None, None

@@ -9,7 +9,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta
 
-from .normalize import CITY_ALIASES, norm_employer
+from .normalize import CITY_ALIASES, employer_matches
 from .profile import Profile
 from .requirements import JobRequirements
 from .security import detect_injection
@@ -97,6 +97,35 @@ def relevance(job_title: str, description: str, reqs: JobRequirements, profile: 
 LIVE_LISTING_SOURCES = {"greenhouse", "lever", "ashby", "workday"}
 
 
+_PER_YEAR = {"hour": 2080, "day": 260, "week": 52, "month": 12, "year": 1}
+_INTERVAL_ALIASES = {"hourly": "hour", "daily": "day", "weekly": "week", "monthly": "month", "yearly": "year",
+                     "annual": "year", "annually": "year", "annum": "year", "per annum": "year", "p.a.": "year"}
+
+
+def _interval(v: str | None) -> str | None:
+    v = (v or "").strip().lower().replace("per-", "").replace("per ", "") or None
+    if v is None:
+        return None
+    v = _INTERVAL_ALIASES.get(v, v)
+    v = _INTERVAL_ALIASES.get(v.split("-")[0], v.split("-")[0])  # Lever: "year-salary", "hour-wage"
+    return v if v in _PER_YEAR else ("?" + v)
+
+
+def _to_interval(amount: float, frm: str | None, to: str | None) -> float | None:
+    """Convert a pay amount between intervals. None if either interval is not recognised.
+    An unstated job interval is taken to be the candidate's (salaries in postings are usually annual)."""
+    f, t = _interval(frm), _interval(to) or "year"
+    if f is None:
+        return amount
+    if f.startswith("?") or t.startswith("?"):
+        return None
+    return amount * _PER_YEAR[f] / _PER_YEAR[t]
+
+
+def _from_text(job: dict, key: str) -> bool:
+    return bool(job.get(key) or (job.get("raw") or {}).get(key))
+
+
 def screen(job: dict, reqs: JobRequirements, profile: Profile, *, relevance_threshold: float = 0.25,
            max_age_days: int = 60, today: date | None = None) -> ScreenResult:
     today = today or date.today()
@@ -108,7 +137,7 @@ def screen(job: dict, reqs: JobRequirements, profile: Profile, *, relevance_thre
     remote = job.get("remote_policy")
 
     # ---- employer, expiry, fraud, injection ------------------------------------
-    if norm_employer(job.get("employer") or "") in {norm_employer(x) for x in prefs.excluded_employers}:
+    if employer_matches(job.get("employer"), prefs.excluded_employers):
         r.disqualifiers.append("employer is on the candidate's exclusion list")
     closing = _parse_date(job.get("closing_date"))
     posted = _parse_date(job.get("date_posted"))
@@ -138,7 +167,11 @@ def screen(job: dict, reqs: JobRequirements, profile: Profile, *, relevance_thre
     # ---- employment type ---------------------------------------------------------
     et = job.get("employment_type")
     if et and prefs.employment_types and et not in prefs.employment_types:
-        r.disqualifiers.append(f"employment type {et} not in preferences {prefs.employment_types}")
+        msg = f"employment type {et} not in preferences {prefs.employment_types}"
+        if _from_text(job, "employment_type_from_text"):
+            r.warnings.append(msg + " (guessed from the description text; check the posting)")
+        else:
+            r.disqualifiers.append(msg)
 
     # ---- location / remote --------------------------------------------------------
     pref_remote_ok = "remote" in prefs.remote
@@ -195,8 +228,21 @@ def screen(job: dict, reqs: JobRequirements, profile: Profile, *, relevance_thre
 
     # ---- salary -----------------------------------------------------------------------
     smax, cur = job.get("salary_max"), job.get("salary_currency")
-    if smax and cur and profile.salary.minimum and profile.salary.currency == cur and smax < profile.salary.minimum:
-        r.disqualifiers.append(f"salary max {smax:,.0f} {cur} below candidate minimum {profile.salary.minimum:,.0f}")
+    if smax and cur and profile.salary.minimum and profile.salary.currency == cur:
+        annual = _to_interval(smax, job.get("salary_interval"), profile.salary.interval)
+        if annual is None:
+            if smax < profile.salary.minimum:
+                r.warnings.append(f"salary max {smax:,.0f} {cur} per {job.get('salary_interval')} could not be "
+                                  f"compared with the candidate minimum per {profile.salary.interval}")
+        elif annual < profile.salary.minimum:
+            msg = f"salary max {smax:,.0f} {cur} below candidate minimum {profile.salary.minimum:,.0f}"
+            if annual != smax:
+                msg = (f"salary max {smax:,.0f} {cur} per {job.get('salary_interval')} (about {annual:,.0f} per "
+                       f"{profile.salary.interval}) below candidate minimum {profile.salary.minimum:,.0f}")
+            if _from_text(job, "salary_from_text"):
+                r.warnings.append(msg + " (read from the description text; check the posting)")
+            else:
+                r.disqualifiers.append(msg)
 
     # ---- relevance and seniority ------------------------------------------------------
     r.relevance = relevance(title, desc, reqs, profile)

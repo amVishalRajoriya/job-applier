@@ -11,7 +11,7 @@ from typing import Any, Iterable
 import yaml
 
 from ..security import html_to_text
-from .base import JobRecord, Source, infer_remote_policy, normalize_employment_type, parse_salary
+from .base import JobRecord, Source, infer_remote_policy, normalize_employment_type, parse_salary, text_inferred
 
 _LDJSON = re.compile(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', re.S | re.I)
 
@@ -55,11 +55,13 @@ def jobposting_to_record(jp: dict, source: str, page_url: str, employer_hint: st
     smin = smax = None
     cur = sal.get("currency") if isinstance(sal, dict) else None
     interval = None
+    sal_text = False
     if isinstance(val, dict):
         smin, smax = val.get("minValue") or val.get("value"), val.get("maxValue") or val.get("value")
         interval = (val.get("unitText") or "").lower() or None
     if smin is None:
         smin, smax, cur = parse_salary(desc)
+        sal_text = smax is not None
     remote = "remote" if jp.get("jobLocationType") == "TELECOMMUTE" else infer_remote_policy(desc[:600], jp.get("title"))
     emp = jp.get("employmentType")
     emp = " ".join(emp) if isinstance(emp, list) else emp
@@ -75,7 +77,7 @@ def jobposting_to_record(jp: dict, source: str, page_url: str, employer_hint: st
         closing_date=(jp.get("validThrough") or "")[:10] or None, original_url=url,
         application_url=jp.get("applicationUrl") or url,
         salary_min=smin, salary_max=smax, salary_currency=cur, salary_interval=interval,
-        raw={"page": page_url},
+        raw={"page": page_url, **text_inferred(sal_text)},
     )
 
 
@@ -134,7 +136,8 @@ class FeedSource(Source):
                                 remote_policy=infer_remote_policy(title, loc, desc[:600]),
                                 date_posted=None, original_url=link, application_url=link,
                                 employment_type=normalize_employment_type(desc[:600]),
-                                salary_min=smin, salary_max=smax, salary_currency=cur, raw={"feed": url})
+                                salary_min=smin, salary_max=smax, salary_currency=cur,
+                                raw={"feed": url, **text_inferred(smax is not None, True)})
         else:
             data = json.loads(text)
             items = data.get("items", data.get("jobs", [])) if isinstance(data, dict) else data
@@ -150,8 +153,10 @@ def _record_from_dict(it: dict, source: str, prefix: str, employer_default: str 
     url = it.get("url") or it.get("original_url")
     sid = it.get("id") or url or hashlib.sha1((it.get("title", "") + desc[:200]).encode()).hexdigest()[:16]
     smin, smax, cur = it.get("salary_min"), it.get("salary_max"), it.get("salary_currency")
+    sal_text = False
     if smin is None:
         smin, smax, cur = parse_salary(desc)
+        sal_text = smax is not None
     return JobRecord(
         source=source, source_id=f"{prefix}{sid}", title=(it.get("title") or "").strip(),
         employer=(it.get("employer") or it.get("company") or employer_default or "Unknown employer").strip(),
@@ -163,7 +168,8 @@ def _record_from_dict(it: dict, source: str, prefix: str, employer_default: str 
         date_posted=(it.get("date_posted") or it.get("date_published") or "")[:10] or None,
         closing_date=it.get("closing_date"), original_url=url,
         application_url=it.get("application_url") or url,
-        salary_min=smin, salary_max=smax, salary_currency=cur, raw={"imported": True},
+        salary_min=smin, salary_max=smax, salary_currency=cur,
+        raw={"imported": True, **text_inferred(sal_text, not it.get("employment_type"))},
     )
 
 

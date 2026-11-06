@@ -5,7 +5,7 @@ import hashlib
 import re
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from .db import Database, dumps
+from .db import Database, dumps, loads
 from .sources.base import JobRecord
 
 TRACKING = re.compile(r"^(utm_.*|gh_src|gh_jid_src|source|src|ref|refid|trk|lever-source.*|lever-origin|"
@@ -48,6 +48,19 @@ def norm_employer(name: str) -> str:
     return re.sub(r"\s+", " ", t).strip()
 
 
+def employer_matches(name: str | None, names) -> bool:
+    """True if name is one of names, ignoring case, punctuation and legal suffixes, and treating a listed
+    name as matching longer forms of it ("PayU" matches "PayU Payments Pvt Ltd")."""
+    n = norm_employer(name or "")
+    if not n:
+        return False
+    for x in names or []:
+        e = norm_employer(x or "")
+        if e and (n == e or n.startswith(e + " ") or e.startswith(n + " ")):
+            return True
+    return False
+
+
 def norm_location(loc: str | None, remote: str | None = None) -> str:
     if not loc:
         return "remote" if remote == "remote" else ""
@@ -57,8 +70,18 @@ def norm_location(loc: str | None, remote: str | None = None) -> str:
     return CITY_ALIASES.get(first, first)
 
 
+UNKNOWN_EMPLOYER = "unknown employer"
+# Statuses a job can be sent back to DISCOVERED from when a full page replaces an alert summary
+_REPREPARE = {"DISCOVERED", "SCREENED", "SCORED", "OPTIMIZATION_REQUIRED", "OPTIMIZED", "READY_FOR_REVIEW",
+              "PREPARATION_FAILED"}
+
+
 def dedup_key(rec: JobRecord) -> str:
     basis = "|".join([norm_employer(rec.employer), norm_title(rec.title), norm_location(rec.location, rec.remote_policy)])
+    if norm_employer(rec.employer) in ("", UNKNOWN_EMPLOYER):
+        # Without an employer, title+location says little ("Backend Engineer", no location): two different
+        # postings must not merge. Only the site's own job id (or the canonical URL) can match them.
+        basis += "|" + rec.source + ":" + rec.source_id
     return hashlib.sha1(basis.encode()).hexdigest()
 
 
@@ -100,6 +123,9 @@ def upsert_job(db: Database, rec: JobRecord) -> tuple[int, bool]:
                  title=rec.title, employer=rec.employer)
     else:
         row = db.job(job_id)
+        if _upgrades_summary(db, job_id, rec):
+            _upgrade_from_full_page(db, row, rec, key)
+            return job_id, False
         updates = {}
         for f in _MERGE_FIELDS:
             new = getattr(rec, f)
@@ -125,3 +151,47 @@ def upsert_job(db: Database, rec: JobRecord) -> tuple[int, bool]:
         if not created:
             db.audit("discovery", "duplicate_merged", "job", job_id, source=rec.source, source_id=rec.source_id)
     return job_id, created
+
+
+def _upgrades_summary(db: Database, job_id: int, rec: JobRecord) -> bool:
+    """True when every stored source for the job is a summary (job-alert email) and rec is a full page."""
+    if rec.raw.get("summary_only"):
+        return False
+    rows = db.q("SELECT raw FROM job_sources WHERE job_id=?", (job_id,))
+    return bool(rows) and all((loads(r["raw"], {}) or {}).get("summary_only") for r in rows)
+
+
+def _upgrade_from_full_page(db: Database, row, rec: JobRecord, key: str) -> None:
+    """A saved full job page arrived for a job known only from an alert summary: replace the summary's
+    description, employer and title, and send the job back for screening and preparation unless the
+    candidate already approved or submitted it."""
+    job_id = row["id"]
+    updates = {f: getattr(rec, f) for f in _MERGE_FIELDS if getattr(rec, f)}
+    updates["description"] = rec.description or row["description"]
+    for f in ("required_qualifications", "preferred_qualifications"):
+        if getattr(rec, f):
+            updates[f] = getattr(rec, f)
+    if rec.title:
+        updates["title"] = rec.title
+    if norm_employer(rec.employer) not in ("", UNKNOWN_EMPLOYER):
+        updates["employer"] = rec.employer
+    if not db.one("SELECT id FROM jobs WHERE dedup_key=? AND id<>?", (key, job_id)):
+        updates["dedup_key"] = key
+    canon = canonical_url(rec.original_url)
+    if canon and not row["canonical_url"]:
+        updates["canonical_url"] = canon
+    db.update_job(job_id, **updates)
+    with db.tx() as c:
+        cur = c.execute("UPDATE job_sources SET raw=?, url=? WHERE job_id=? AND source=? AND source_id=?",
+                        (dumps(rec.raw), rec.original_url, job_id, rec.source, rec.source_id))
+        if cur.rowcount == 0:
+            c.execute("INSERT OR IGNORE INTO job_sources(job_id, source, source_id, url, discovered_at, raw) "
+                      "VALUES (?,?,?,?,?,?)",
+                      (job_id, rec.source, rec.source_id, rec.original_url, rec.discovered_at, dumps(rec.raw)))
+    db.audit("discovery", "summary_replaced_by_full_page", "job", job_id, source=rec.source,
+             source_id=rec.source_id, old_employer=row["employer"], new_employer=updates.get("employer", row["employer"]),
+             old_title=row["title"], new_title=updates.get("title", row["title"]))
+    app = db.application(job_id)
+    if row["status"] in _REPREPARE and not (app and (app["approved_at"] or app["submitted_at"])):
+        if row["status"] != "DISCOVERED":
+            db.set_status(job_id, "DISCOVERED", "discovery", "full job page saved: screen and prepare again", force=True)

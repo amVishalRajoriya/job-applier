@@ -19,6 +19,9 @@ from ..browser import launch_chromium
 from ..config import Settings
 from ..db import Database, dumps, loads, now
 from ..profile import Profile
+from playwright.sync_api import Error as PWError
+
+from ..security import host_of
 from .adapters import ADAPTERS, FatalError, FormField, GenericFormAdapter, NeedsHuman, TransientError
 from ..sources.base import CAPABILITIES
 from .policy import allowed_domains_for, authorize, capability_for
@@ -222,6 +225,17 @@ def submit(db: Database, settings: Settings, profile: Profile, job_id: int, acto
                         ev = _evidence(page, out_dir, "after_submit_timeout")
                         return _record(db, job_id, app, actor, "SUBMISSION_UNVERIFIED", None, ev,
                                        "no response after submit; outcome unknown")
+                    except PWError as e:
+                        ev = _evidence(page, out_dir, "after_submit_error")
+                        return _record(db, job_id, app, actor, "SUBMISSION_UNVERIFIED", None, ev,
+                                       f"browser error after clicking submit ({_first_line(e)}); outcome unknown")
+                    if a.redirected_after_submit:
+                        ev = _evidence(page, out_dir, "after_submit_redirect")
+                        target = a.redirected_after_submit
+                        return _record(db, job_id, app, actor, "SUBMISSION_UNVERIFIED", None,
+                                       {**ev, "redirect": target},
+                                       f"redirected to {host_of(target)} after submit (not followed); "
+                                       "check your email for a confirmation")
                     res = a.result()
                     ev = _evidence(page, out_dir, "confirmation")
                     if res["kind"] == "success" and res["reference"]:
@@ -246,6 +260,12 @@ def submit(db: Database, settings: Settings, profile: Profile, job_id: int, acto
                 except FatalError as e:
                     _evidence(page, out_dir, "fatal")
                     return _fail(db, job_id, app, actor, str(e), closed=e.closed)
+                except PWError as e:  # browser crash, detached element, ... anywhere outside the click itself
+                    if (db.application(job_id)["retry_status"] or "") == "in_progress":
+                        ev = _evidence(page, out_dir, "after_submit_error")
+                        return _record(db, job_id, app, actor, "SUBMISSION_UNVERIFIED", None, ev,
+                                       f"browser error after clicking submit ({_first_line(e)}); outcome unknown")
+                    raise TransientError(f"browser error before submitting: {_first_line(e)}") from e
         except TransientError as e:
             last_error = str(e)
             db.audit(actor, "transient_error", "job", job_id, attempt=attempt, error=last_error)
@@ -335,6 +355,10 @@ def _finish_dry_run(db, actor, rep: dict, out_dir: Path) -> dict:
     db.audit(actor, "dry_run", "job", rep["job_id"], outcome=rep["outcome"], detail=rep["detail"],
              report=rep["report"], blocked_requests=len(rep["blocked_requests"]), submitted=False)
     return rep
+
+
+def _first_line(e: BaseException) -> str:
+    return (str(e).strip().splitlines() or [type(e).__name__])[0][:200]
 
 
 def _record(db, job_id, app, actor, status, reference, evidence, note) -> dict:

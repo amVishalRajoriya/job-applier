@@ -7,6 +7,7 @@ logs in, and stops on anything it does not understand.
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass, field
 
 from playwright.sync_api import Error as PWError, Page, TimeoutError as PWTimeout
@@ -98,7 +99,10 @@ LOGIN = re.compile(r"sign in to (continue|apply)|create an account to apply|ente
                    r"one[- ]time (pass)?code|two[- ]factor", re.I)
 SUCCESS = re.compile(r"application (submitted|received|complete)|thank you for (applying|your application)|"
                      r"we('ve| have) received your application", re.I)
-REFERENCE = re.compile(r"(?:reference|confirmation (?:number|no\.?|#|id)|application (?:id|number))\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{3,})", re.I)
+# The label is matched case-insensitively; the value must follow ":", "#" or "is", be upper-case/digits and
+# contain at least one digit, so ordinary words ("Reference checks happen later") are never taken as a reference.
+REFERENCE = re.compile(r"(?i:reference(?: (?:number|no\.?|id|code))?|confirmation (?:number|no\.?|#|id|code)|"
+                       r"application (?:id|number|no\.?))\s*(?::|#|(?i:is))\s*#?\s*((?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,})\b")
 DUPLICATE = re.compile(r"already (applied|submitted)|previously applied|duplicate application", re.I)
 RETRYABLE = re.compile(r"session (has )?expired|please try again|temporar(il)?y unavailable|something went wrong", re.I)
 
@@ -116,9 +120,16 @@ class GenericFormAdapter:
         self.read_only = read_only
         self.blocked_writes: list[str] = []
         self.violations: list[str] = []
+        self.redirected_after_submit: str | None = None
+        self._navigations = 0
+        page.on("framenavigated", self._on_nav)
         self.page.set_default_timeout(timeout_ms)
         page.on("request", self._watch)
         page.route("**/*", self._guard)
+
+    def _on_nav(self, frame) -> None:
+        if frame == self.page.main_frame:
+            self._navigations += 1
 
     def _watch(self, request) -> None:
         # redirects are not routed, so record every main-frame navigation target as well
@@ -209,15 +220,18 @@ class GenericFormAdapter:
 
     def fill(self, f: FormField, value: str) -> None:
         loc = self.page.locator(f.selector).first
-        if f.type == "select":
-            loc.select_option(label=value)
-        elif f.type == "checkbox":
-            if value.lower() in ("yes", "true", "1", "checked"):
-                loc.check()
-        elif f.type == "radio":
-            self.page.locator(f.selector).nth(f.options.index(value)).check()
-        else:
-            loc.fill(value)
+        try:
+            if f.type == "select":
+                loc.select_option(label=value)
+            elif f.type == "checkbox":
+                if value.lower() in ("yes", "true", "1", "checked"):
+                    loc.check()
+            elif f.type == "radio":
+                self.page.locator(f.selector).nth(f.options.index(value)).check()
+            else:
+                loc.fill(value)
+        except PWTimeout as e:  # e.g. no <option> with that label: a person has to pick
+            raise NeedsHuman(f"could not set {f.label!r} to {value!r}") from e
 
     def upload(self, f: FormField, path: str) -> None:
         self.page.locator(f.selector).first.set_input_files(path)
@@ -233,12 +247,51 @@ class GenericFormAdapter:
         if self.read_only:
             raise RuntimeError("dry run: submit is disabled")
         btn = self.page.locator(SUBMIT_SELECTOR).first
+        navs, violations = self._navigations, len(self.violations)
+        errors_before = self._count(".error, [role=alert], .field-error")
+        before = self.body_text()
+        btn.click()
+        # Wait for whichever comes first: a page navigation (classic form post), or the page changing in place
+        # (forms that submit by fetch/XHR and render the confirmation without navigating).
+        deadline = time.monotonic() + self.timeout / 1000
+        while True:
+            if len(self.violations) > violations:
+                break
+            if self._navigations > navs:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded",
+                                                  timeout=max(1, int((deadline - time.monotonic()) * 1000)))
+                except PWTimeout as e:
+                    raise TimeoutError("page did not finish loading after clicking submit") from e
+                break
+            if self._settled_in_place(errors_before, before):
+                break
+            if time.monotonic() > deadline:
+                raise TimeoutError("no response after clicking submit")
+            self.page.wait_for_timeout(200)
+        # The click has happened, so a redirect to another domain now (e.g. the employer's own thank-you page)
+        # does not mean the application failed: report it so the engine records SUBMISSION_UNVERIFIED.
+        if len(self.violations) > violations:
+            self.redirected_after_submit = self.violations[-1]
+        elif not self.page.url.startswith(("about:", "chrome-error:")) and not domain_allowed(self.page.url, self.allowed):
+            self.redirected_after_submit = self.page.url
+
+    def _count(self, selector: str) -> int:
         try:
-            with self.page.expect_navigation(wait_until="domcontentloaded"):
-                btn.click()
-        except PWTimeout as e:
-            raise TimeoutError("no response after clicking submit") from e
-        self._check_domain()
+            return self.page.locator(selector).count()
+        except PWError:
+            return 0
+
+    def _settled_in_place(self, errors_before: int, before: str) -> bool:
+        try:
+            text = self.body_text()
+            if any(rx.search(text) and not rx.search(before) for rx in (SUCCESS, DUPLICATE, RETRYABLE)):
+                return True
+            if self.page.locator(SUBMIT_SELECTOR).count() == 0:
+                return True  # the form went away
+            return self._count(".error, [role=alert], .field-error") > errors_before
+        except PWError:  # the page is mid-navigation; the navigation counter will catch it
+            return False
 
     def result(self) -> dict:
         text = self.body_text()

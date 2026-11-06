@@ -376,17 +376,32 @@ def cmd_retry(args):
         print(json.dumps(r, default=str))
 
 
+def _run_once(db, s) -> dict:
+    prof = _profile(db)
+    return {"discovery": pipeline.run_discovery(db, s),
+            "processing": pipeline.screen_and_score(db, s, prof),
+            "applications": pipeline.apply_pending(db, s, prof) if s.mode != "discovery" else [],
+            "retries": pipeline.retry_failed(db, s, prof) if s.mode != "discovery" else []}
+
+
 def cmd_run(args):
     s, db = _ctx(args)
+    if not args.loop:
+        print(json.dumps(_run_once(db, s), indent=2, default=str))
+        return
     while True:
-        prof = _profile(db)
-        print(json.dumps({"discovery": pipeline.run_discovery(db, s),
-                          "processing": pipeline.screen_and_score(db, s, prof),
-                          "applications": pipeline.apply_pending(db, s, prof) if s.mode != "discovery" else [],
-                          "retries": pipeline.retry_failed(db, s, prof) if s.mode != "discovery" else []},
-                         indent=2, default=str))
-        if not args.loop:
-            break
+        try:
+            s = load_settings(args.home)  # pick up mode/source changes made in the dashboard
+            print(json.dumps(_run_once(db, s), indent=2, default=str), flush=True)
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:  # an unattended loop must survive one bad iteration
+            err = f"{type(e).__name__}: {e}"
+            print(json.dumps({"error": err}), file=sys.stderr, flush=True)
+            try:
+                db.audit("system", "run_loop_error", None, None, error=err)
+            except Exception:
+                pass
         time.sleep(args.interval)
 
 

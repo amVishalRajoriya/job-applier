@@ -38,7 +38,7 @@ from typing import Any, Iterable, Iterator
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from ..security import html_to_text
-from .base import JobRecord, Source, infer_remote_policy, normalize_employment_type, parse_salary
+from .base import JobRecord, Source, infer_remote_policy, normalize_employment_type, parse_salary, text_inferred
 from .web import _LDJSON, _iter_jobpostings, jobposting_to_record
 
 JOB_SITES = ("linkedin", "indeed", "naukri")
@@ -85,6 +85,8 @@ def unwrap(url: str, depth: int = 4) -> str:
     """Follow redirect wrappers that mail clients add (Google, Outlook safelinks, tracking hops)
     by reading the wrapped URL from the query string. Nothing is fetched."""
     for _ in range(depth):
+        if _identify_direct(url):
+            return url  # a real job link that merely carries a url=... tracking parameter: keep it
         try:
             parts = urlsplit(url)
         except ValueError:
@@ -107,14 +109,32 @@ def unwrap(url: str, depth: int = 4) -> str:
 
 _LI_VIEW = re.compile(r"/(?:comm/)?jobs/view/(?:[^/?#]*?-)?(\d{6,})")
 _INDEED_JK = re.compile(r"^[0-9a-f]{16}$")
-_NAUKRI_LISTING = re.compile(r"/job-listings-([a-z0-9-]+?)-(\d{9,15})(?:[/?#]|$)", re.I)
+_NAUKRI_LISTING = re.compile(r"/job-listings-(?:([a-z0-9-]+?)-)?(\d{9,15})(?:[/?#]|$)", re.I)
+_NAUKRIGULF_JID = re.compile(r"-jid-(\d{9,15})(?:[/?#]|$)", re.I)
+_INDEED_COUNTRY_HOST = re.compile(r"^[a-z]{2}\.indeed\.com$")
+_INDEED_TLD_HOST = re.compile(r"^(?:www\.)?(indeed\.[a-z.]+)$")
 
 
 def identify(url: str | None) -> JobRef | None:
-    """Recognise a LinkedIn, Indeed or Naukri job URL (after unwrapping redirects)."""
+    """Recognise a LinkedIn, Indeed or Naukri job URL (as given, or after unwrapping redirects)."""
     if not url:
         return None
-    url = unwrap(url.strip())
+    url = url.strip()
+    return _identify_direct(url) or _identify_direct(unwrap(url))
+
+
+def _indeed_base(host: str) -> str:
+    """The public job host for an Indeed link: www.indeed.com, a country subdomain (in.indeed.com) or a country
+    domain (www.indeed.co.in). Click-tracking hosts (cts., engage., click. ...) map to www.indeed.com."""
+    if _INDEED_COUNTRY_HOST.match(host) and not host.startswith("www."):
+        return host
+    m = _INDEED_TLD_HOST.match(host)
+    if m:
+        return "www." + m.group(1)
+    return "www.indeed.com"
+
+
+def _identify_direct(url: str) -> JobRef | None:
     host = _host(url)
     if not host:
         return None
@@ -129,16 +149,21 @@ def identify(url: str | None) -> JobRef | None:
     if _on(host, "indeed.com") or re.search(r"(^|\.)indeed\.[a-z.]+$", host):
         jk = next((v for k in ("jk", "vjk") for v in qs.get(k, []) if _INDEED_JK.match(v.lower())), None)
         if jk:
-            base = host if host.startswith(("www.", "in.", "uk.", "ca.", "au.")) or host.count(".") >= 2 else "www." + host
-            return JobRef("indeed", jk.lower(), f"https://{base}/viewjob?jk={jk.lower()}")
+            return JobRef("indeed", jk.lower(), f"https://{_indeed_base(host)}/viewjob?jk={jk.lower()}")
         return None
     if _on(host, "naukri.com"):
         m = _NAUKRI_LISTING.search(parts.path + ("?" if parts.query else ""))
         if m:
-            return JobRef("naukri", m.group(2), f"https://www.naukri.com/job-listings-{m.group(1).lower()}-{m.group(2)}")
+            slug = f"{m.group(1).lower()}-" if m.group(1) else ""
+            return JobRef("naukri", m.group(2), f"https://www.naukri.com/job-listings-{slug}{m.group(2)}")
         jid = next((v for k in ("jobId", "jobid", "jid") for v in qs.get(k, []) if v.isdigit()), None)
         if jid:
             return JobRef("naukri", jid, f"https://www.naukri.com/job-listings-{jid}")
+        return None
+    if _on(host, "naukrigulf.com"):
+        m = _NAUKRIGULF_JID.search(parts.path)
+        if m:
+            return JobRef("naukri", f"gulf-{m.group(1)}", f"https://www.naukrigulf.com{parts.path}")
         return None
     return None
 
@@ -374,6 +399,7 @@ def parse_job_page(html: str, url: str | None = None, *, origin: str = "saved_pa
                              ("Key skills: " + _first(sel, "skills")) if _first(sel, "skills") else None) if x]
         full = "\n\n".join([desc, *extra])
         smin, smax, cur = parse_salary(_first(sel, "salary") or full)
+        inferred = text_inferred(smax is not None and not _first(sel, "salary"), True)
         rec = JobRecord(source=ref.site, source_id=ref.source_id, title=title, employer=company or "Unknown employer",
                         description=full, location=location,
                         remote_policy=infer_remote_policy(location, title, full[:800]),
@@ -387,8 +413,9 @@ def parse_job_page(html: str, url: str | None = None, *, origin: str = "saved_pa
     rec.original_url = ref.url
     ats = _external_ats_url(r, [postings[0].get("applicationUrl") if postings else None])
     rec.application_url = ats or ref.url
+    inferred = inferred if not postings else {k: v for k, v in rec.raw.items() if k.endswith("_from_text")}
     rec.raw = {"site": ref.site, "job_id": ref.job_id, "origin": origin, "untested_live": True,
-               **({"external_ats": ats} if ats else {})}
+               **({"external_ats": ats} if ats else {}), **inferred}
     return rec
 
 
@@ -401,8 +428,7 @@ def read_saved_file(path: Path) -> tuple[str, str | None]:
         for part in msg.walk():
             if part.get_content_type() == "text/html":
                 payload = part.get_payload(decode=True) or b""
-                return payload.decode(part.get_content_charset() or "utf-8", "replace"), \
-                    url or part.get("Content-Location")
+                return _decode(payload, part.get_content_charset()), url or part.get("Content-Location")
         raise ValueError("no HTML part in the .mhtml file")
     html = data.decode("utf-8", "replace")
     # Chrome and Firefox add <!-- saved from url=(0071)https://... --> to "Save page as" files
@@ -437,6 +463,15 @@ def _sender_site(msg: Message) -> str | None:
     return None
 
 
+def _decode(payload: bytes, charset: str | None) -> str:
+    """Decode with the declared charset; unknown or bogus charsets (unknown-8bit, x-user-defined, typos)
+    fall back to UTF-8 with replacement characters instead of failing."""
+    try:
+        return payload.decode(charset or "utf-8", "replace")
+    except (LookupError, TypeError):
+        return payload.decode("utf-8", "replace")
+
+
 def _html_parts(msg: Message) -> tuple[list[str], list[str]]:
     html, text = [], []
     for part in msg.walk():
@@ -446,7 +481,7 @@ def _html_parts(msg: Message) -> tuple[list[str], list[str]]:
         payload = part.get_payload(decode=True)
         if payload is None:
             continue
-        s = payload.decode(part.get_content_charset() or "utf-8", "replace")
+        s = _decode(payload, part.get_content_charset())
         (html if ctype == "text/html" else text).append(s)
     return html, text
 
@@ -567,7 +602,7 @@ def alert_to_record(j: AlertJob, received: str | None) -> JobRecord:
         date_posted=received, original_url=j.ref.url, application_url=j.ref.url,
         salary_min=smin, salary_max=smax, salary_currency=cur,
         raw={"site": j.ref.site, "job_id": j.ref.job_id, "origin": "alert_email", "summary_only": True,
-             "untested_live": True},
+             "untested_live": True, **text_inferred(smax is not None, True)},
     )
 
 
@@ -597,6 +632,10 @@ class JobAlertSource(Source):
 
     kind = "job_alerts"
 
+    def __init__(self, http, **config):
+        super().__init__(http, **config)
+        self.problems: list[str] = []
+
     def messages(self) -> Iterator[Message]:
         if self.config.get("folder"):
             folder = _expand(self.config["folder"])
@@ -604,11 +643,14 @@ class JobAlertSource(Source):
                 raise FileNotFoundError(f"job alert folder not found: {folder}")
             for p in sorted(folder.iterdir()):
                 suf = p.suffix.lower()
-                if suf == ".eml":
-                    yield email.message_from_bytes(p.read_bytes(), policy=email.policy.compat32)
-                elif suf in (".mbox", ".mbx"):
-                    for m in mailbox.mbox(str(p)):
-                        yield m
+                try:
+                    if suf == ".eml":
+                        yield email.message_from_bytes(p.read_bytes(), policy=email.policy.compat32)
+                    elif suf in (".mbox", ".mbx"):
+                        for m in mailbox.mbox(str(p)):
+                            yield m
+                except (OSError, ValueError) as e:  # one unreadable file must not lose the rest of the folder
+                    self.problems.append(f"{p.name}: {type(e).__name__}: {e}")
         if self.config.get("imap"):
             yield from self._imap(self.config["imap"])
 
@@ -644,8 +686,13 @@ class JobAlertSource(Source):
         sites = set(self.config.get("sites") or JOB_SITES)
         strict = bool(self.config.get("require_known_sender", True))
         seen: set[str] = set()
+        self.problems = []
         for msg in self.messages():
-            _, jobs = parse_alert_email(msg, require_known_sender=strict)
+            try:
+                _, jobs = parse_alert_email(msg, require_known_sender=strict)
+            except Exception as e:  # one malformed message must not lose every other alert in the run
+                self.problems.append(f"alert email {msg.get('Subject', '')!r}: {type(e).__name__}: {e}")
+                continue
             for j in jobs:
                 if j.ref.site in sites and j.ref.source_id not in seen:
                     seen.add(j.ref.source_id)
@@ -683,6 +730,9 @@ class SavedPagesSource(Source):
                 rec = parse_job_page(html, url)
             except (PageBlocked, ValueError) as e:
                 self.problems.append(f"{p.name}: {e}")
+                continue
+            except Exception as e:  # unreadable file, odd encoding, ...: report it and keep going
+                self.problems.append(f"{p.name}: {type(e).__name__}: {e}")
                 continue
             if rec.source_id in got:
                 continue

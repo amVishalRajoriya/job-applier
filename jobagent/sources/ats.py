@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from ..security import html_to_text
-from .base import JobRecord, Source, infer_remote_policy, normalize_employment_type, parse_salary
+from .base import JobRecord, Source, infer_remote_policy, normalize_employment_type, parse_salary, text_inferred
 
 
 def _ms_to_iso(ms: int | float | None) -> str | None:
@@ -36,7 +36,9 @@ class GreenhouseSource(Source):
                 employment_type=normalize_employment_type(str(meta.get("employment type") or "") or desc[:800]),
                 date_posted=(j.get("first_published") or j.get("updated_at") or "")[:10] or None,
                 original_url=j.get("absolute_url"), application_url=j.get("absolute_url"),
-                salary_min=smin, salary_max=smax, salary_currency=cur, raw={"id": j.get("id"), "board": token},
+                salary_min=smin, salary_max=smax, salary_currency=cur,
+                raw={"id": j.get("id"), "board": token,
+                     **text_inferred(smax is not None, not meta.get("employment type"))},
             )
 
 
@@ -151,7 +153,7 @@ class WorkdaySource(Source):
                     closing_date=(info.get("endDate") or "")[:10] or None,
                     original_url=public_url, application_url=public_url,
                     salary_min=smin, salary_max=smax, salary_currency=cur,
-                    raw={"path": path, "canApply": info.get("canApply")},
+                    raw={"path": path, "canApply": info.get("canApply"), **text_inferred(smax is not None)},
                 )
             offset += limit
             if offset >= int(page.get("total") or 0):

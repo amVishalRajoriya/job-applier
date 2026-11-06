@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from ..db import Database, dumps, loads, now
+from ..normalize import employer_matches
 from ..security import domain_allowed, host_of
 from ..sources.base import CAPABILITIES
 from ..sources.jobsites import NEVER_AUTOMATE, site_of
@@ -128,7 +129,7 @@ def authorize(db: Database, mode: str, job_id: int) -> Decision:
         problems.append(f"domain {host_of(url)} not in consent")
     if final is None or final["total"] < c["min_final_score"]:
         problems.append(f"final score {final['total'] if final else None} below consent minimum {c['min_final_score']}")
-    if job["employer"] in c.get("excluded_employers", []):
+    if employer_matches(job["employer"], c.get("excluded_employers", [])):
         problems.append("employer excluded by consent")
     if screen.get("unknowns"):
         problems.append("material unknowns: " + "; ".join(screen["unknowns"]))
