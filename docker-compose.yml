@@ -1,0 +1,16 @@
+# Run the job applier on your own computer with Docker Desktop:
+#   docker compose up --build        then open http://localhost:7860 and log in with the password below
+# Data (resume, jobs, documents) is kept in the "jobagent-data" volume between runs.
+services:
+  jobagent:
+    build: .
+    ports:
+      - "127.0.0.1:7860:7860"   # only reachable from this computer
+    environment:
+      JOBAGENT_DASHBOARD_TOKEN: ${DASHBOARD_PASSWORD:-jobagent}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - jobagent-data:/data
+    restart: unless-stopped
+volumes:
+  jobagent-data:

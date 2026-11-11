@@ -1,15 +1,15 @@
 {
   "name": "Job Applier",
-  "image": "mcr.microsoft.com/playwright/python:v1.64.0-noble",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "hostRequirements": { "cpus": 2, "memory": "4gb" },
-  "containerEnv": { "PIP_BREAK_SYSTEM_PACKAGES": "1" },
-  "onCreateCommand": "python3 -m pip install -q -r requirements.txt",
+  "onCreateCommand": "pip install --user -q -r requirements.txt && python3 -m playwright install --with-deps chromium",
   "postStartCommand": "bash .devcontainer/run.sh",
+  "postAttachCommand": "bash .devcontainer/run.sh",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": { "label": "Job Applier", "onAutoForward": "openBrowser", "visibility": "private" }
   },
   "customizations": {
-    "codespaces": { "openFiles": ["docs/HOSTING_GUIDE.md"] }
+    "codespaces": { "openFiles": [".devcontainer/HOW_TO_OPEN.md"] }
   }
 }

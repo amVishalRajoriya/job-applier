@@ -25,6 +25,25 @@ next to port 8000.
 - Free personal GitHub accounts get about 60 hours a month on this machine size.
 - Real job boards are reachable from a codespace, so this is the place to test with your actual resume.
 
+**If the app tab shows "HTTP ERROR 502"**, the app is not running. In the codespace open a terminal (menu ☰ →
+Terminal → New Terminal), run the line below, leave it running, and reload the app tab:
+
+```bash
+git pull; pip install -q -r requirements.txt; bash .devcontainer/run.sh --foreground
+```
+
+### Or run it on your own computer (Docker Desktop)
+
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), download this repository
+(green **Code** button → **Download ZIP**, then unzip), open a terminal in that folder and run:
+
+```bash
+docker compose up --build
+```
+
+The first build takes a few minutes. Then open <http://localhost:7860> and log in with the password `jobagent`
+(set your own with `DASHBOARD_PASSWORD=yourpassword docker compose up --build`). Your data is kept between runs.
+
 Then follow Part B below. Part A is only needed if you want a permanent public address.
 
 ---
