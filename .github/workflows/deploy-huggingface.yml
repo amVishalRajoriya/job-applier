@@ -1,7 +1,8 @@
-# Copies this repo to your Hugging Face Space on every push to the default branch (or by hand from the Actions tab).
-# One-time setup (see docs/HOSTING_GUIDE.md):
-#   repo secret   HF_TOKEN  = a Hugging Face access token with write permission
-#   repo variable HF_SPACE  = <your-hf-username>/<space-name>, e.g. vishal/job-applier
+# Creates (once) and updates your Hugging Face Space on every push to main, or by hand from the Actions tab.
+# One-time setup: two repository secrets (Settings > Secrets and variables > Actions > New repository secret):
+#   HF_TOKEN            a Hugging Face access token of type "Write"
+#   DASHBOARD_PASSWORD  the password you will type to open the app (16+ characters)
+# Optional: secret ANTHROPIC_API_KEY; variable HF_SPACE (<hf-username>/<name>, default <hf-username>/job-applier).
 name: Deploy to Hugging Face Space
 on:
   push:
@@ -10,36 +11,61 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ vars.HF_SPACE != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Build the Space contents
-        run: |
-          mkdir /tmp/space
-          # Spaces refuse plain-git binaries, and the app does not need docs or tests at runtime.
-          rsync -a --exclude .git --exclude .github --exclude docs --exclude tests --exclude '*.png' \
-                --exclude '*.pdf' --exclude '*.docx' ./ /tmp/space/
-          cat > /tmp/space/README.md <<'MD'
-          ---
-          title: Job Applier
-          emoji: 📄
-          colorFrom: blue
-          colorTo: indigo
-          sdk: docker
-          app_port: 7860
-          pinned: false
-          ---
-          Hosted copy of the job applier dashboard. Protected by the JOBAGENT_DASHBOARD_TOKEN secret.
-          MD
-          sed -i 's/^          //' /tmp/space/README.md
-      - name: Push to the Space
+      - name: Check the secrets are set
+        id: check
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$DASHBOARD_PASSWORD" ]; then
+            echo "::notice::Skipping deploy: add the HF_TOKEN and DASHBOARD_PASSWORD repository secrets first (see docs/HOSTING_GUIDE.md)."
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'yes'
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.ready == 'yes'
+        with:
+          python-version: "3.13"
+      - name: Create or update the Space
+        if: steps.check.outputs.ready == 'yes'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           HF_SPACE: ${{ vars.HF_SPACE }}
         run: |
-          cd /tmp/space
-          git init -q -b main
-          git config user.email "actions@github.com"; git config user.name "GitHub Actions"
-          git add -A && git commit -qm "Deploy ${GITHUB_SHA::7}"
-          HF_USER="${HF_SPACE%%/*}"
-          git push --force "https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" main
+          pip install -q "huggingface_hub>=0.30"
+          python - <<'PY'
+          import os, pathlib, shutil, tempfile
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          user = api.whoami()["name"]
+          space = os.environ.get("HF_SPACE") or f"{user}/job-applier"
+          api.create_repo(space, repo_type="space", space_sdk="docker", private=False, exist_ok=True)
+          api.add_space_secret(space, "JOBAGENT_DASHBOARD_TOKEN", os.environ["DASHBOARD_PASSWORD"])
+          if os.environ.get("ANTHROPIC_API_KEY"):
+              api.add_space_secret(space, "ANTHROPIC_API_KEY", os.environ["ANTHROPIC_API_KEY"])
+
+          out = pathlib.Path(tempfile.mkdtemp())
+          shutil.copytree(".", out, dirs_exist_ok=True,
+                          ignore=shutil.ignore_patterns(".git", ".github", "docs", "tests", "__pycache__"))
+          (out / "README.md").write_text(
+              "---\ntitle: Job Applier\nemoji: 📄\ncolorFrom: blue\ncolorTo: indigo\nsdk: docker\n"
+              "app_port: 7860\npinned: false\n---\n"
+              "Hosted copy of the job applier dashboard. Every page needs the owner's password.\n")
+          api.upload_folder(repo_id=space, repo_type="space", folder_path=str(out),
+                            commit_message=f"Deploy {os.environ.get('GITHUB_SHA', '')[:7]}")
+
+          host = getattr(api.space_info(space), "host", None) or \
+              "https://" + space.replace("/", "-").replace("_", "-").replace(".", "-").lower() + ".hf.space"
+          summary = (f"### Deployed\n\nApp address: **{host}**\n\n"
+                     f"Build progress: https://huggingface.co/spaces/{space}?logs=build\n\n"
+                     "The first build takes 3 to 5 minutes. Log in with your DASHBOARD_PASSWORD.\n")
+          pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(summary)
+          print(summary)
+          PY

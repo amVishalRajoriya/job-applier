@@ -2,7 +2,7 @@
 
 This guide has two parts:
 
-- **Part A** gets you your own private web address for the app (about 15 minutes, free, done once).
+- **Part A** gets you your own web address for the app (about 5 minutes, free, done once).
 - **Part B** walks through using the app, with a screenshot of every step.
 
 Every screenshot is from the real app running in the same container that you will deploy. The person in them
@@ -24,53 +24,38 @@ details are stored encrypted inside the running container and nowhere else.
 (after 48 hours with no visits, or whenever you redeploy). Treat it as a test bench: export what you want to keep
 (Jobs page → Export CSV / JSON / HTML) and download tailored resumes from each job page.
 
-### A1. Get the code into a GitHub repository
+The code is already in your private GitHub repository `amVishalRajoriya/job-applier`. A GitHub Action in it
+creates the Space, sets the password on it and deploys the app. It needs two secrets from you.
 
-1. On GitHub, create a new **private** repository, for example `job-applier`. Leave it empty
-   (no README, no .gitignore).
-2. Tell Claude the repository name. Claude pushes the code to it.
+### A1. Get a Hugging Face token
 
-### A2. Create the Space on Hugging Face
+1. Sign up or log in at <https://huggingface.co> (free).
+2. Open <https://huggingface.co/settings/tokens/new?tokenType=write>, name it `github-deploy`, press
+   **Create token** and copy it (it starts with `hf_`).
 
-1. Sign up or log in at <https://huggingface.co>.
-2. Open <https://huggingface.co/new-space>.
-3. Fill in:
-   - **Space name:** `job-applier`
-   - **License:** leave as is
-   - **Space SDK:** **Docker**, template **Blank**
-   - **Space hardware:** **CPU basic · free**
-   - **Visibility:** **Public** (the password below protects the app. A private Space blocks the app's own
-     login cookie, so use Public.)
-4. Press **Create Space**. It shows "No application file" for now. That is expected.
+### A2. Add two secrets to the GitHub repository
 
-### A3. Set your password (and optional Claude key) on the Space
+Open <https://github.com/amVishalRajoriya/job-applier/settings/secrets/actions/new> and add:
 
-In the Space, open **Settings** → **Variables and secrets** → **New secret**:
+| Name | Value |
+|---|---|
+| `HF_TOKEN` | The Hugging Face token you just copied |
+| `DASHBOARD_PASSWORD` | A long password you make up (16+ characters). You type it to open the app. |
 
-| Name | Value | Needed? |
-|---|---|---|
-| `JOBAGENT_DASHBOARD_TOKEN` | A long password you make up (16+ characters). You type it to log in. | **Required.** The app refuses to start without it. |
-| `ANTHROPIC_API_KEY` | Your Claude API key | Optional. Without it, cover letters and resume wording use plain templates built only from your resume. |
-| `JOBAGENT_ENCRYPTION_KEY` | Leave unset | Optional. If unset, the app makes a key at startup and keeps it next to the data it protects. |
+Optional: a third secret `ANTHROPIC_API_KEY` with your Claude API key. Without it, cover letters and resume wording
+use plain templates built only from your resume.
 
-### A4. Connect GitHub to the Space
+### A3. Deploy
 
-1. On Hugging Face: your avatar → **Settings** → **Access Tokens** → **Create new token** → type **Write** →
-   name it `github-deploy` → **Create**. Copy the token (it starts with `hf_`).
-2. On GitHub, in your `job-applier` repository: **Settings** → **Secrets and variables** → **Actions**.
-   - **Secrets** tab → **New repository secret**: name `HF_TOKEN`, value the token you copied.
-   - **Variables** tab → **New repository variable**: name `HF_SPACE`, value `<your-hf-username>/job-applier`.
+1. Open <https://github.com/amVishalRajoriya/job-applier/actions/workflows/deploy-huggingface.yml> and press
+   **Run workflow** → **Run workflow**. (Every later push to `main` redeploys by itself.)
+2. When the run turns green (under a minute), open it. Its summary shows your **app address**, which looks like
+   `https://<your-hf-username>-job-applier.hf.space`, and a link to the build log.
+3. The first build on Hugging Face takes 3 to 5 minutes. Then open the app address directly (not the
+   huggingface.co/spaces page; the login cookie only works on the direct address).
 
-### A5. Deploy
-
-1. In the GitHub repository, open **Actions** → **Deploy to Hugging Face Space** → **Run workflow**.
-   From now on every push to the repository redeploys automatically.
-2. Back on the Space page you see **Building** for 3 to 5 minutes, then **Running**.
-3. Your app's address is **`https://<your-hf-username>-job-applier.hf.space`**.
-   Open that address directly, not the huggingface.co/spaces page. The login cookie only works on the direct address.
-
-If the Space shows **Runtime error**, open its **Logs** tab. The most common cause is a missing
-`JOBAGENT_DASHBOARD_TOKEN` secret. The log then says "Refusing to start".
+If the Space shows **Runtime error**, open its **Logs** tab. "Refusing to start" means the password secret did not
+arrive: check `DASHBOARD_PASSWORD` and run the workflow again.
 
 <details><summary>Alternative host: Render</summary>
 
@@ -241,4 +226,4 @@ The free Space wipes its data on restart. Before you leave:
 | Fill a form without sending it | Job page → Dry run (never submits) |
 | Allow submissions | Run → Mode: review → Set mode |
 | Stop submissions | Run → Mode: discovery → Set mode |
-| Turn on Claude-written wording | Space Settings → add secret `ANTHROPIC_API_KEY` → the Space restarts (data is wiped) |
+| Turn on Claude-written wording | GitHub secret `ANTHROPIC_API_KEY` → run the deploy workflow again (the restart wipes data) |
