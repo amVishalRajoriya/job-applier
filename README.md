@@ -33,7 +33,9 @@ logs in to job sites.
 
 ## Put it online
 
-To run it on a free public URL (Hugging Face Spaces, password-protected) and for a step-by-step guide with
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/amVishalRajoriya/job-applier?quickstart=1)
+
+One click runs the real app in a private GitHub Codespace. To run it on a free public URL (Hugging Face Spaces, password-protected) and for a step-by-step guide with
 screenshots, see [docs/HOSTING_GUIDE.md](docs/HOSTING_GUIDE.md) (also as [PDF](docs/Job_Applier_Guide.pdf)).
 The container is defined in `Dockerfile`; `.github/workflows/deploy-huggingface.yml` deploys it.
 

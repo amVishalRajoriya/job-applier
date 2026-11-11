@@ -12,6 +12,23 @@ Your copy, once hosted, fetches the real boards you list.
 
 ---
 
+## Fastest way: run it in one click (GitHub Codespaces)
+
+Open **<https://codespaces.new/amVishalRajoriya/job-applier?quickstart=1>** and press **Create codespace**.
+GitHub builds a cloud machine for you (2 to 4 minutes the first time), installs everything, starts the app, and opens
+it in a new browser tab. If the tab does not open, go to the **Ports** tab at the bottom and click the globe icon
+next to port 8000.
+
+- Only your GitHub account can open the app's address (the port is private), so no extra password is needed.
+- Your data stays in the codespace until you delete it. Stopping it (or leaving it idle for 30 minutes) keeps
+  the data; the app restarts by itself when you reopen the codespace from <https://github.com/codespaces>.
+- Free personal GitHub accounts get about 60 hours a month on this machine size.
+- Real job boards are reachable from a codespace, so this is the place to test with your actual resume.
+
+Then follow Part B below. Part A is only needed if you want a permanent public address.
+
+---
+
 ## Part A: put it online (one time)
 
 **Where it runs:** a free Hugging Face Space (2 CPUs, 16 GB of memory, no card needed). The app runs in a Docker
