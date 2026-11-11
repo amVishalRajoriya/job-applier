@@ -1,0 +1,45 @@
+# Copies this repo to your Hugging Face Space on every push to the default branch (or by hand from the Actions tab).
+# One-time setup (see docs/HOSTING_GUIDE.md):
+#   repo secret   HF_TOKEN  = a Hugging Face access token with write permission
+#   repo variable HF_SPACE  = <your-hf-username>/<space-name>, e.g. vishal/job-applier
+name: Deploy to Hugging Face Space
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.HF_SPACE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Space contents
+        run: |
+          mkdir /tmp/space
+          # Spaces refuse plain-git binaries, and the app does not need docs or tests at runtime.
+          rsync -a --exclude .git --exclude .github --exclude docs --exclude tests --exclude '*.png' \
+                --exclude '*.pdf' --exclude '*.docx' ./ /tmp/space/
+          cat > /tmp/space/README.md <<'MD'
+          ---
+          title: Job Applier
+          emoji: 📄
+          colorFrom: blue
+          colorTo: indigo
+          sdk: docker
+          app_port: 7860
+          pinned: false
+          ---
+          Hosted copy of the job applier dashboard. Protected by the JOBAGENT_DASHBOARD_TOKEN secret.
+          MD
+          sed -i 's/^          //' /tmp/space/README.md
+      - name: Push to the Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          cd /tmp/space
+          git init -q -b main
+          git config user.email "actions@github.com"; git config user.name "GitHub Actions"
+          git add -A && git commit -qm "Deploy ${GITHUB_SHA::7}"
+          HF_USER="${HF_SPACE%%/*}"
+          git push --force "https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" main

@@ -62,7 +62,7 @@
 {% if can_dry_run and not kit and job.status not in ('SUBMITTED','SUBMISSION_UNVERIFIED','CLOSED') %}
 <form method="post" action="/jobs/{{ job.id }}/dry-run"><input type="hidden" name="csrf_token" value="{{ csrf }}">
 <button title="Opens the real form, fills it, screenshots it. Never submits.">Dry run (never submits)</button>
-<label class="muted"><input type="checkbox" name="show" value="1"> show the browser</label></form>{% endif %}
+{% if not hosted %}<label class="muted"><input type="checkbox" name="show" value="1"> show the browser</label>{% endif %}</form>{% endif %}
 {% if job.status == 'READY_FOR_REVIEW' %}
 <form method="post" action="/jobs/{{ job.id }}/approve"><input type="hidden" name="csrf_token" value="{{ csrf }}">
 <button>Approve documents and answers</button></form>{% endif %}

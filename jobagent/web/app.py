@@ -30,18 +30,54 @@ def create_app(settings: Settings, db: Database | None = None) -> FastAPI:
     app.state.runner = runner
     config_path = settings.home / "config.yaml"
 
+    hosted = os.environ.get("JOBAGENT_HOSTED") == "1"
+    TEMPLATES.env.globals["hosted"] = hosted
+    TEMPLATES.env.globals["locked"] = bool(token)
+
+    def set_login_cookie(resp: Response, request: Request) -> None:
+        resp.set_cookie("jobagent_token", token, httponly=True, samesite="lax", max_age=30 * 86400,
+                        secure=request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https")
+
     @app.middleware("http")
     async def auth(request: Request, call_next):
-        if token:
+        if token and request.url.path not in ("/login", "/healthz"):
             supplied = request.cookies.get("jobagent_token") or request.query_params.get("token") or \
                 request.headers.get("authorization", "").removeprefix("Bearer ")
             if not secrets.compare_digest(supplied or "", token):
+                if request.method == "GET" and "text/html" in request.headers.get("accept", ""):
+                    return RedirectResponse("/login?next=" + quote(request.url.path), status_code=303)
                 return PlainTextResponse("unauthorized", status_code=401)
             resp = await call_next(request)
             if request.query_params.get("token"):
-                resp.set_cookie("jobagent_token", token, httponly=True, samesite="strict")
+                set_login_cookie(resp, request)
             return resp
         return await call_next(request)
+
+    def safe_next(nxt: str) -> str:
+        return nxt if nxt.startswith("/") and not nxt.startswith("//") else "/"
+
+    @app.get("/healthz")
+    def healthz():
+        return PlainTextResponse("ok")
+
+    @app.get("/login", response_class=HTMLResponse)
+    def login_page(request: Request, next: str = "/", err: str = ""):
+        return TEMPLATES.TemplateResponse(request, "login.html", {"next": safe_next(next), "err": err})
+
+    @app.post("/login")
+    def login(request: Request, password: str = Form(""), next: str = Form("/")):
+        if not token or secrets.compare_digest(password, token):
+            resp = RedirectResponse(safe_next(next), status_code=303)
+            if token:
+                set_login_cookie(resp, request)
+            return resp
+        return RedirectResponse("/login?err=1&next=" + quote(safe_next(next)), status_code=303)
+
+    @app.post("/logout")
+    def logout():
+        resp = RedirectResponse("/login", status_code=303)
+        resp.delete_cookie("jobagent_token")
+        return resp
 
     def check_csrf(value: str) -> None:
         if not secrets.compare_digest(value or "", csrf):

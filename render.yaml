@@ -1,0 +1,15 @@
+# Alternative host: Render (New > Blueprint > pick this repo). Free plan has 512 MB of memory and sleeps after
+# 15 idle minutes, which also wipes the data; Hugging Face Spaces (docs/HOSTING_GUIDE.md) is the better free fit.
+services:
+  - type: web
+    name: job-applier
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: JOBAGENT_DASHBOARD_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PORT
+        value: "10000"

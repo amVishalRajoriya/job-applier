@@ -31,6 +31,12 @@ See [.env.example](.env.example). Secrets live only in the environment: the encr
 `ANTHROPIC_API_KEY` and the optional dashboard token. No passwords are stored anywhere; the agent never
 logs in to job sites.
 
+## Put it online
+
+To run it on a free public URL (Hugging Face Spaces, password-protected) and for a step-by-step guide with
+screenshots, see [docs/HOSTING_GUIDE.md](docs/HOSTING_GUIDE.md) (also as [PDF](docs/Job_Applier_Guide.pdf)).
+The container is defined in `Dockerfile`; `.github/workflows/deploy-huggingface.yml` deploys it.
+
 ## Quick start: the browser front end
 
 Everything can be done from the dashboard, with no commands after the first one:

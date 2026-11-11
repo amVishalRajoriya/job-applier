@@ -17,5 +17,6 @@ input,select,textarea,button{font:inherit;color:inherit;background:var(--bg);bor
 button{cursor:pointer;background:var(--accent);color:#fff;border:none}button:disabled{opacity:.45;cursor:not-allowed}.scroll{overflow-x:auto}
 </style></head><body>
 <header><a href="/">Jobs</a><a href="/setup">Setup</a><a href="/run">Run</a><a href="/audit" class="muted">Audit log</a>
-<span class="muted">Export: <a href="/export.csv">CSV</a> · <a href="/export.json">JSON</a> · <a href="/export.html">HTML</a></span></header>
+<span class="muted">Export: <a href="/export.csv">CSV</a> · <a href="/export.json">JSON</a> · <a href="/export.html">HTML</a></span>{% if locked %}<form method="post" action="/logout" style="margin-left:auto"><button style="background:none;color:var(--muted);padding:0">Log out</button></form>{% endif %}</header>
+{% if hosted %}<div style="padding:6px 20px;background:var(--card);border-bottom:1px solid var(--line);font-size:12px" class="muted">Hosted test copy. Your data lives only while this server runs; it is wiped when the host restarts or rebuilds. Export anything you want to keep.</div>{% endif %}
 <main>{% block body %}{% endblock %}</main></body></html>

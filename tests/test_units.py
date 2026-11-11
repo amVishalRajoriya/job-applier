@@ -141,6 +141,17 @@ def test_dashboard(env, prepared, monkeypatch):
     locked = TestClient(create_app(s, db))
     assert locked.get("/").status_code == 401
     assert locked.get("/?token=s3cret").status_code == 200
+    fresh = TestClient(create_app(s, db))
+    r = fresh.get("/run", headers={"accept": "text/html"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/login")
+    assert fresh.get("/healthz").status_code == 200
+    bad = fresh.post("/login", data={"password": "nope", "next": "/run"}, follow_redirects=False)
+    assert "err=1" in bad.headers["location"]
+    ok = fresh.post("/login", data={"password": "s3cret", "next": "//evil.example"}, follow_redirects=False)
+    assert ok.headers["location"] == "/" and "jobagent_token" in ok.cookies
+    assert fresh.get("/run").status_code == 200
+    fresh.post("/logout")
+    assert fresh.get("/run").status_code == 401
 
 
 def test_cli_smoke(tmp_path):
