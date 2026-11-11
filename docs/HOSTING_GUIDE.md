@@ -31,6 +31,10 @@ Then follow Part B below. Part A is only needed if you want a permanent public a
 
 ## Part A: put it online (one time)
 
+> **Update 2026-11-11:** Hugging Face now refuses to create Docker Spaces on free accounts (the deploy failed with
+> "402 Payment Required"). Part A works only with Hugging Face PRO or billing added. For free, use the Codespaces
+> link above, or Render (see "Alternative host: Render" below).
+
 **Where it runs:** a free Hugging Face Space (2 CPUs, 16 GB of memory, no card needed). The app runs in a Docker
 container that already has the Chromium browser it needs to fill application forms.
 
